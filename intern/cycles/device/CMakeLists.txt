@@ -116,6 +116,15 @@ set(SRC_OPTIX
   optix/util.h
 )
 
+set(SRC_SIMPLE
+  simple/device.cpp
+  simple/device.h
+  simple/device_impl.cpp
+  simple/device_impl.h
+  simple/queue.cpp
+  simple/queue.h
+)
+
 set(SRC_HEADERS
   device.h
   denoise.h
@@ -134,6 +143,7 @@ set(SRC
   ${SRC_DUMMY}
   ${SRC_MULTI}
   ${SRC_OPTIX}
+  ${SRC_SIMPLE}
   ${SRC_HEADERS}
 )
 
@@ -228,4 +238,5 @@ source_group("multi" FILES ${SRC_MULTI})
 source_group("metal" FILES ${SRC_METAL})
 source_group("optix" FILES ${SRC_OPTIX})
 source_group("oneapi" FILES ${SRC_ONEAPI})
+source_group("simple" FILES ${SRC_SIMPLE})
 source_group("common" FILES ${SRC_BASE} ${SRC_HEADERS})

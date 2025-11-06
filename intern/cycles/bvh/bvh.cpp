@@ -23,6 +23,7 @@
 #  include "bvh/optix.h"
 #endif
 
+#include "bvh/simple.h"
 #include "util/log.h"
 
 CCL_NAMESPACE_BEGIN
@@ -46,6 +47,8 @@ const char *bvh_layout_name(BVHLayout layout)
       return "HIPRT";
     case BVH_LAYOUT_EMBREEGPU:
       return "EMBREEGPU";
+    case BVH_LAYOUT_SIMPLE:
+      return "SIMPLE";
     case BVH_LAYOUT_MULTI_OPTIX:
     case BVH_LAYOUT_MULTI_METAL:
     case BVH_LAYOUT_MULTI_HIPRT:
@@ -130,6 +133,8 @@ unique_ptr<BVH> BVH::create(const BVHParams &params,
       (void)device;
       break;
 #endif
+    case BVH_LAYOUT_SIMPLE:
+      return make_unique<BVHSimple>(params, geometry, objects, device);
     case BVH_LAYOUT_MULTI_OPTIX:
     case BVH_LAYOUT_MULTI_METAL:
     case BVH_LAYOUT_MULTI_HIPRT:

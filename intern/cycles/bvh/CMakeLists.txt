@@ -19,6 +19,7 @@ set(SRC
   multi.cpp
   node.cpp
   optix.cpp
+  simple.cpp
   sort.cpp
   split.cpp
   unaligned.cpp
@@ -46,6 +47,7 @@ set(SRC_HEADERS
   node.h
   optix.h
   params.h
+  simple.h
   sort.h
   split.h
   unaligned.h

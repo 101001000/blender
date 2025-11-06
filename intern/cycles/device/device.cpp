@@ -19,6 +19,7 @@
 #include "device/multi/device.h"
 #include "device/oneapi/device.h"
 #include "device/optix/device.h"
+#include "device/simple/device.h"
 
 #ifdef WITH_HIPRT
 #  include <hiprtew.h>
@@ -43,6 +44,7 @@ vector<DeviceInfo> Device::cpu_devices;
 vector<DeviceInfo> Device::hip_devices;
 vector<DeviceInfo> Device::metal_devices;
 vector<DeviceInfo> Device::oneapi_devices;
+vector<DeviceInfo> Device::simple_devices;
 uint Device::devices_initialized_mask = 0;
 
 /* Device */
@@ -79,6 +81,9 @@ unique_ptr<Device> Device::create(const DeviceInfo &info,
   switch (info.type) {
     case DEVICE_CPU:
       device = device_cpu_create(info, stats, profiler, headless);
+      break;
+    case DEVICE_SIMPLE:
+      device = device_simple_create(info, stats, profiler, headless);
       break;
 #ifdef WITH_CUDA
     case DEVICE_CUDA:
@@ -154,6 +159,9 @@ DeviceType Device::type_from_string(const char *name)
   if (strcmp(name, "HIPRT") == 0) {
     return DEVICE_HIPRT;
   }
+  if (strcmp(name, "SIMPLE") == 0) {
+    return DEVICE_SIMPLE;
+  }
 
   return DEVICE_NONE;
 }
@@ -184,6 +192,9 @@ string Device::string_from_type(DeviceType type)
   if (type == DEVICE_HIPRT) {
     return "HIPRT";
   }
+  if (type == DEVICE_SIMPLE) {
+    return "SIMPLE";
+  }
 
   return "";
 }
@@ -192,6 +203,7 @@ vector<DeviceType> Device::available_types()
 {
   vector<DeviceType> types;
   types.push_back(DEVICE_CPU);
+  types.push_back(DEVICE_SIMPLE);
 #ifdef WITH_CUDA
   types.push_back(DEVICE_CUDA);
 #endif
@@ -291,6 +303,16 @@ vector<DeviceInfo> Device::available_devices(const uint mask)
     }
   }
 
+  if (mask & DEVICE_MASK_SIMPLE) {
+    if (!(devices_initialized_mask & DEVICE_MASK_SIMPLE)) {
+      device_simple_info(simple_devices);
+      devices_initialized_mask |= DEVICE_MASK_SIMPLE;
+    }
+    for (const DeviceInfo &info : simple_devices) {
+      devices.push_back(info);
+    }
+  }
+
 #ifdef WITH_METAL
   if (mask & DEVICE_MASK_METAL) {
     if (!(devices_initialized_mask & DEVICE_MASK_METAL)) {
@@ -324,6 +346,11 @@ string Device::device_capabilities(const uint mask)
   if (mask & DEVICE_MASK_CPU) {
     capabilities += "\nCPU device capabilities: ";
     capabilities += device_cpu_capabilities() + "\n";
+  }
+
+  if (mask & DEVICE_MASK_SIMPLE) {
+    capabilities += "\nSimple device capabilities: ";
+    capabilities += device_simple_capabilities() + "\n";
   }
 
 #ifdef WITH_CUDA
@@ -470,6 +497,7 @@ void Device::free_memory()
   oneapi_devices.free_memory();
   cpu_devices.free_memory();
   metal_devices.free_memory();
+  simple_devices.free_memory();
 }
 
 unique_ptr<DeviceQueue> Device::gpu_queue_create()

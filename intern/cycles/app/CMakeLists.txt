@@ -21,6 +21,7 @@ set(LIB
   cycles_subd
   cycles_graph
   cycles_util
+  portableRT::portableRT
 )
 
 if(WITH_ALEMBIC)

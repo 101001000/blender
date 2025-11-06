@@ -88,7 +88,11 @@ __device__
 #  else
                                           IsActiveOp is_active_op)
 {
+#ifdef __KERNEL_SIMPLE__
+  int* warp_offset = get_global_value(int*, warp_offset);
+#else
   extern ccl_gpu_shared int warp_offset[];
+#endif
 
 #    ifndef __KERNEL_METAL__
   const uint blocksize = ccl_gpu_block_dim_x;

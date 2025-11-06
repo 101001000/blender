@@ -102,7 +102,7 @@ ccl_device_inline float fminf(const float a, const float b)
 #  endif /* _WIN32 */
 #endif   /* __HIP__, __KERNEL_ONEAPI__ */
 
-#if !defined(__KERNEL_GPU__) || defined(__KERNEL_ONEAPI__)
+#if !defined(__KERNEL_GPU__) || defined(__KERNEL_ONEAPI__) || defined(__KERNEL_SIMPLE__)
 #  ifndef __KERNEL_ONEAPI__
 using std::isfinite;
 using std::isnan;
@@ -651,7 +651,7 @@ ccl_device float bits_to_01(const uint bits)
   return bits * (1.0f / (float)0xFFFFFFFF);
 }
 
-#if !defined(__KERNEL_GPU__)
+#if !defined(__KERNEL_GPU__) || defined(__KERNEL_SIMPLE__)
 #  if defined(__GNUC__)
 ccl_device_inline uint popcount(const uint x)
 {

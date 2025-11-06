@@ -25,6 +25,8 @@
 #  include "kernel/device/optix/bvh.h"
 #elif defined(__HIPRT__)
 #  include "kernel/device/hiprt/bvh.h"
+#elif defined(__KERNEL_SIMPLE__)
+#  include "kernel/device/simple/bvh.h"
 #else
 #  define __BVH2__
 #endif

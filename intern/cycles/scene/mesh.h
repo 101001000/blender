@@ -174,6 +174,7 @@ class Mesh : public Geometry {
   unordered_multimap<int, int>
       vert_stitching_map; /* stitching index -> multiple real vert indices */
 
+  friend class SimpleDevice;
   friend class BVH2;
   friend class BVHBuild;
   friend class BVHSpatialSplit;

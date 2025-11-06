@@ -39,6 +39,10 @@ set(SRC_KERNEL_DEVICE_OPTIX
   device/optix/kernel_shader_raytrace.cu
 )
 
+set(SRC_KERNEL_DEVICE_SIMPLE
+  device/simple/kernel.cpp
+)
+
 if(WITH_CYCLES_OSL)
   math(EXPR OSL_LIBRARY_VERSION_CODE "${OSL_LIBRARY_VERSION_MAJOR} * 10000 + ${OSL_LIBRARY_VERSION_MINOR} * 100 + ${OSL_LIBRARY_VERSION_PATCH}")
 
@@ -137,6 +141,12 @@ set(SRC_KERNEL_DEVICE_ONEAPI_HEADERS
   device/oneapi/kernel.h
   device/oneapi/kernel_templates.h
   device/cpu/bvh.h
+)
+
+set(SRC_KERNEL_DEVICE_SIMPLE_HEADERS
+  device/simple/config.h
+  device/simple/globals.h
+  device/simple/compat.h
 )
 
 set(SRC_KERNEL_CLOSURE_HEADERS
@@ -428,7 +438,7 @@ set(SRC_UTIL_HEADERS
 )
 
 set(LIB
-
+  portableRT::portableRT #PRT_TODO: this is weird
 )
 
 # `Zstd` compressor for kernels.
@@ -1290,6 +1300,7 @@ cycles_add_library(cycles_kernel "${LIB}"
   ${SRC_KERNEL_DEVICE_OPTIX_HEADERS}
   ${SRC_KERNEL_DEVICE_METAL_HEADERS}
   ${SRC_KERNEL_DEVICE_ONEAPI_HEADERS}
+  ${SRC_KERNEL_DEVICE_SIMPLE_HEADERS}
 )
 
 source_group("bake" FILES ${SRC_KERNEL_BAKE_HEADERS})
@@ -1304,6 +1315,7 @@ source_group("device\\hiprt" FILES ${SRC_KERNEL_DEVICE_HIPRT} ${SRC_KERNEL_DEVIC
 source_group("device\\optix" FILES ${SRC_KERNEL_DEVICE_OPTIX} ${SRC_KERNEL_DEVICE_OPTIX_HEADERS})
 source_group("device\\metal" FILES ${SRC_KERNEL_DEVICE_METAL} ${SRC_KERNEL_DEVICE_METAL_HEADERS})
 source_group("device\\oneapi" FILES ${SRC_KERNEL_DEVICE_ONEAPI} ${SRC_KERNEL_DEVICE_ONEAPI_HEADERS})
+source_group("device\\simple" FILES ${SRC_KERNEL_DEVICE_SIMPLE} ${SRC_KERNEL_DEVICE_SIMPLE_HEADERS})
 source_group("film" FILES ${SRC_KERNEL_FILM_HEADERS})
 source_group("geom" FILES ${SRC_KERNEL_GEOM_HEADERS})
 source_group("integrator" FILES ${SRC_KERNEL_INTEGRATOR_HEADERS})
@@ -1330,6 +1342,10 @@ cycles_add_gpu_kernel_dependencies(cycles_kernel_optix)
 cycles_add_gpu_kernel_dependencies(cycles_kernel_hip)
 cycles_add_gpu_kernel_dependencies(cycles_kernel_hiprt)
 cycles_add_gpu_kernel_dependencies(cycles_kernel_oneapi)
+cycles_add_gpu_kernel_dependencies(cycles_kernel_simple)
+
+set(PRT_EXTRA_KERNELS simple_integrator_init_from_camera simple_integrator_reset simple_integrator_intersect_closest simple_prefix_sum simple_integrator_sorted_paths_array simple_integrator_shade_surface simple_integrator_shade_background simple_integrator_queued_paths_array simple_integrator_compact_paths_array simple_integrator_terminated_paths_array simple_integrator_compact_states simple_adaptive_sampling_convergence_check)
+prt_set_kernels(cycles_kernel device/simple/kernel.cpp)
 
 # Install kernel source for runtime compilation
 
@@ -1352,6 +1368,8 @@ delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "${SRC_KERNEL_DEVICE_OPTIX}" ${CYCLE
 delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "${SRC_KERNEL_DEVICE_OPTIX_HEADERS}" ${CYCLES_INSTALL_PATH}/source/kernel/device/optix)
 delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "${SRC_KERNEL_DEVICE_METAL}" ${CYCLES_INSTALL_PATH}/source/kernel/device/metal)
 delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "${SRC_KERNEL_DEVICE_METAL_HEADERS}" ${CYCLES_INSTALL_PATH}/source/kernel/device/metal)
+delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "${SRC_KERNEL_DEVICE_SIMPLE}" ${CYCLES_INSTALL_PATH}/source/kernel/device/simple)
+delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "${SRC_KERNEL_DEVICE_SIMPLE_HEADERS}" ${CYCLES_INSTALL_PATH}/source/kernel/device/simple)
 delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "${SRC_KERNEL_FILM_HEADERS}" ${CYCLES_INSTALL_PATH}/source/kernel/film)
 delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "${SRC_KERNEL_GEOM_HEADERS}" ${CYCLES_INSTALL_PATH}/source/kernel/geom)
 delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "${SRC_KERNEL_INTEGRATOR_HEADERS}" ${CYCLES_INSTALL_PATH}/source/kernel/integrator)
