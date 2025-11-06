@@ -11,6 +11,7 @@ int SimpleDeviceQueue::num_concurrent_states(const size_t state_size) const { re
 int SimpleDeviceQueue::num_concurrent_busy_states(const size_t state_size) const { return 64; }
 void SimpleDeviceQueue::init_execution() {
     debug_init_execution();
+    device->load_texture_info();
 }
 
 template<typename T>
@@ -61,6 +62,7 @@ void read_lookup(SimpleDevice *device){
     std::cout << "value 21760: " << value << "\n";
   }
   
+
 
 bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const DeviceKernelArguments &args) {
 
@@ -366,6 +368,41 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
         device->m_backend->parallel_invoke("simple_adaptive_sampling_filter_y", dummy_rays, dummy_output, &ka, sizeof(ka));
         break;
     }
+    case DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_SHADOW: {
+
+        struct KernelArgs {
+            int *path_index_array;
+            int work_size;
+        };
+
+        assert(args.count == 2);
+
+        KernelArgs ka;
+        ka.path_index_array = get_pointer<int>(args.values[0]);
+        ka.work_size = get_scalar<int>(args.values[1]);
+        device->m_backend->parallel_invoke("simple_integrator_intersect_shadow", dummy_rays, dummy_output, &ka, sizeof(ka));
+        break;
+
+    }
+    case DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SHADE_SHADOW:{
+        struct KernelArgs {
+            int *path_index_array;
+            float* render_buffer;
+            int work_size;
+        };
+
+        assert(args.count == 3);
+
+        KernelArgs ka;
+        ka.path_index_array = get_pointer<int>(args.values[0]);
+        ka.render_buffer = get_pointer<float>(args.values[1]);
+        ka.work_size = get_scalar<int>(args.values[2]);
+        device->m_backend->parallel_invoke("simple_integrator_shade_shadow", dummy_rays, dummy_output, &ka, sizeof(ka));
+        break;
+    }
+
+
+
     default:
         std::cout << "unknown kernel " << device_kernel_as_string(kernel) << std::endl;
         break;

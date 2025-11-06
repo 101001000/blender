@@ -54,6 +54,7 @@ SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profi
 }
 
 SimpleDevice::~SimpleDevice() {
+    texture_info.free();
     m_backend->global_free("kernel_globals");
 }
 
@@ -67,13 +68,50 @@ void SimpleDevice::global_free(device_memory &mem)
 
 void SimpleDevice::tex_alloc(device_texture &mem)
 {
-  throw std::runtime_error("Texture allocation not supported");
+    auto cmem = generic_alloc(mem);
+    if (!cmem) {
+      return;
+    }
+
+    m_backend->device_copy_to((void*)mem.device_pointer, mem.host_pointer, mem.memory_size());
+
+    struct CPUTexture2D {
+      const void *pixels;
+      int         width;
+      int         height;
+      int         channels;  
+    };
+
+    std::cout << "Allocating " << mem.data_type << std::endl;
+
+    CPUTexture2D dev_tex_info;
+    dev_tex_info.pixels = reinterpret_cast<const void*>(mem.device_pointer);
+    dev_tex_info.width = mem.info.width;
+    dev_tex_info.height = mem.info.height;
+    dev_tex_info.channels = mem.data_elements;
+
+    
+    void* tex_info_ptr = m_backend->device_malloc(sizeof(CPUTexture2D));
+    m_backend->device_copy_to(tex_info_ptr, &dev_tex_info, sizeof(CPUTexture2D));
+
+    mem.info.data = (uint64_t)tex_info_ptr;
+
+    {
+      thread_scoped_lock lock(texture_info_mutex);
+      const uint slot = mem.slot;
+      if (slot >= texture_info.size()) {
+        texture_info.resize(slot + 128);
+      }
+      texture_info[slot] = mem.info;
+      need_texture_info = true;                     // fuerza re-subida al device
+    }
 }
 
 
 void SimpleDevice::tex_free(device_texture &mem)
 {
-  throw std::runtime_error("Texture deallocation not supported");
+  generic_free(mem);
+  //throw std::runtime_error("Texture deallocation not supported");
 }
 
 
@@ -97,6 +135,7 @@ void SimpleDevice::const_copy_to(const char *name, void *host_ptr, const size_t 
 
 
 }
+
 
 void SimpleDevice::global_alloc(device_memory &mem)
 {
@@ -163,13 +202,6 @@ void SimpleDevice::global_copy_to(device_memory &mem)
 }
 
 
-void SimpleDevice::tex_copy_to(device_texture &mem){
-  //check
-   //   std::cout << "texture copy error not implmeneted" << std::endl;
-    throw std::runtime_error("Texture copy not supported");
-}
-
-
 void SimpleDevice::mem_copy_to(device_memory &mem){
   //check
   //  std::cout << "mem_copy_to " << mem.name << std::endl;
@@ -189,6 +221,34 @@ if (mem.type == MEM_GLOBAL) {
     }
   }
 }
+
+void SimpleDevice::tex_copy_to(device_texture &mem){
+    if (!mem.device_pointer) {
+      /* Not yet allocated on device. */
+      tex_alloc(mem);
+    }
+    else if (!mem.is_resident(this)) {
+      /* Peering with another device, may still need to create texture info and object. */
+      bool texture_allocated = false;
+      {
+        thread_scoped_lock lock(texture_info_mutex);
+        texture_allocated = mem.slot < texture_info.size() && texture_info[mem.slot].data != 0;
+      }
+      if (!texture_allocated) {
+        tex_alloc(mem);
+      }
+    }
+    else {
+      generic_copy_to(mem);
+    }
+  //generic_copy_to(mem);
+  //check
+   //   std::cout << "texture copy error not implmeneted" << std::endl;
+    //throw std::runtime_error("Texture copy not supported");
+    //mem_copy_to(mem);
+}
+
+
 void SimpleDevice::mem_move_to_host(device_memory &mem){
   //check
   //  std::cout << "mem_move_to_host " << mem.name << std::endl;

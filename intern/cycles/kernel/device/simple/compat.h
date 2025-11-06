@@ -17,7 +17,6 @@
 #  define ATTR_FALLTHROUGH
 #endif
 
-
 #define ccl_gpu_kernel_signature(name, ...) PRT_KERNEL(simple_##name, __VA_ARGS__)
 #define ccl_gpu_kernel_postfix
 #define ccl_gpu_kernel(block_num_threads, thread_num_registers)
@@ -91,45 +90,6 @@ ccl_device_inline int clampi(int x, int lo, int hi)
   return (x < lo) ? lo : (x > hi ? hi : x);
 }
 
-template<typename T>
-ccl_device_forceinline T ccl_gpu_tex_object_read_2D(const ccl_gpu_tex_object_2D texobj,
-                                                    const float fx, const float fy)
-{
-  //std::cout << "reading 2D text "  << std::endl;
-  const CPUTexture2D &tex = *texobj;
-
-  const float u = fx * tex.width  - 0.5f;
-  const float v = fy * tex.height - 0.5f;
-
-  const int ix = clampi(int(std::floor(u + 0.5f)), 0, tex.width  - 1);
-  const int iy = clampi(int(std::floor(v + 0.5f)), 0, tex.height - 1);
-
-  const size_t idx = (size_t)iy * tex.width + ix;
-  const T *ptr = reinterpret_cast<const T *>(tex.pixels);
-
-  return ptr[idx];
-}
-
-template<typename T>
-ccl_device_forceinline T ccl_gpu_tex_object_read_3D(const ccl_gpu_tex_object_3D texobj,
-                                                    const float fx, const float fy, const float fz)
-{
-  //std::cout << "reading 3D text "  << std::endl;
-  const CPUTexture3D &tex = *texobj;
-
-  const float u = fx * tex.width  - 0.5f;
-  const float v = fy * tex.height - 0.5f;
-  const float w = fz * tex.depth  - 0.5f;
-
-  const int ix = clampi(int(std::floor(u + 0.5f)), 0, tex.width  - 1);
-  const int iy = clampi(int(std::floor(v + 0.5f)), 0, tex.height - 1);
-  const int iz = clampi(int(std::floor(w + 0.5f)), 0, tex.depth  - 1);
-
-  const size_t idx = ((size_t)iz * tex.height + iy) * tex.width + ix;
-  const T *ptr = reinterpret_cast<const T *>(tex.voxels);
-
-  return ptr[idx];
-}
 
 // TODO esto es solo para cpu, mover a su sitio correspondiente.
 // uint32/int: fetch_add/sub devuelven el valor viejo
