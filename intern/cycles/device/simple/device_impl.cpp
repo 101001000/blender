@@ -5,17 +5,16 @@
 #include "bvh/bvh2.h"
 #include <portableRT/portableRT.hpp>
 #include "scene/geometry.h"
+#include "scene/object.h"
 #include "scene/mesh.h"
 #include <dlfcn.h>
 #include <cinttypes>
 
 CCL_NAMESPACE_BEGIN
 
-SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profiler, bool headless) : GPUDevice(info, stats, profiler, headless), object_ids_mem(this, "object_ids", MEM_GLOBAL) {
+SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profiler, bool headless) : GPUDevice(info, stats, profiler, headless), object_ids_mem(this, "object_ids", MEM_GLOBAL), prim_ids_mem(this, "prim_ids", MEM_GLOBAL) {
 
     prt::kernelapi_init({{"kernel_globals", sizeof(KernelParamsSimple)}, {"warp_offset", sizeof(int*)}});
-
-    //std::cout << "test2" << std::endl;
 
     std::cout << "available backends: " << std::endl;
     for (int i = 0; i < prt::available_backends().size(); i++) {
@@ -128,6 +127,7 @@ void SimpleDevice::const_copy_to(const char *name, void *host_ptr, const size_t 
         return; \
       }
     KERNEL_DATA_ARRAY(int, object_ids)
+    KERNEL_DATA_ARRAY(int, prim_ids)
     KERNEL_DATA_ARRAY(KernelData, data)
     KERNEL_DATA_ARRAY(IntegratorStateGPU, integrator_state)
     #include "kernel/data_arrays.h"
@@ -186,7 +186,7 @@ void print_mem(SimpleDevice *device, device_memory &mem){
 void SimpleDevice::global_copy_to(device_memory &mem)
 {
   //check
-  //  std::cout << "global_copy_to " << mem.name << std::endl;
+  std::cout << "global_copy_to " << mem.name << "of size " << mem.memory_size() << std::endl;
   if (!mem.device_pointer) {
     //std::cout << "global_copy_to " << mem.name << " not allocated, allocating" << std::endl;
     generic_alloc(mem);
@@ -393,42 +393,54 @@ std::string geometry_type_name(Geometry::Type type){
     return "unknown";
 }
 
-void SimpleDevice::build_bvh(BVH *bvh, Progress &progress, bool refit){
-    std::cout << "building bvh!" << std::endl;
+void SimpleDevice::build_bvh(BVH *bvh, Progress &progress, bool refit)
+{
+  if (!bvh->params.top_level) return;
 
-    std::vector<std::array<float, 9>> tris;
-    std::vector<int> object_ids;
+  std::vector<std::array<float,9>> tris;
+  std::vector<int> object_ids;
+  std::vector<int> prim_ids;
 
-    for (Geometry *geometry : bvh->geometry) {
-        std::cout << "analizando geometría" << geometry_type_name(geometry->geometry_type) << " " << std::endl;
+  // Mapea cada Object* a su blender_instance_id (posición en bvh->objects)
+  std::unordered_map<Object*, int> obj2idx;
+  int blender_instance_id = 0;
+  for (Object* ob : bvh->objects) {
+    obj2idx[ob] = blender_instance_id++;
+  }
 
-        if (geometry->is_mesh()) {
-            Mesh *mesh = static_cast<Mesh *>(geometry);
-            for (size_t i = 0; i < mesh->num_triangles(); ++i) {
-                Mesh::Triangle tri = mesh->get_triangle(i);
-                float3 v0 = mesh->verts[tri.v[0]];
-                float3 v1 = mesh->verts[tri.v[1]];
-                float3 v2 = mesh->verts[tri.v[2]];
-                tris.push_back({v0.x, v0.y, v0.z, v1.x, v1.y, v1.z, v2.x, v2.y, v2.z});            
-                object_ids.push_back(geometry->index);
-            }
-        }
+  for (Object *obj : bvh->objects) {
+    Geometry* geometry = obj->get_geometry();
+    if (!geometry->is_mesh()) continue;
+    Mesh* mesh = static_cast<Mesh*>(geometry);
+    if (geometry->index == -1) continue;
+
+    const Transform &M = obj->get_tfm();
+    auto tp = [&](const float3 &p){ return transform_point(&M, p); };
+
+    const int obj_id = obj2idx[obj]; // <- usa el mismo id que HIPRT (“user_instance_id”)
+
+    for (size_t j = 0; j < mesh->num_triangles(); ++j) {
+      Mesh::Triangle tri = mesh->get_triangle(j);
+      float3 v0 = tp(mesh->get_verts()[tri.v[0]]);
+      float3 v1 = tp(mesh->get_verts()[tri.v[1]]);
+      float3 v2 = tp(mesh->get_verts()[tri.v[2]]);
+      tris.push_back({v0.x,v0.y,v0.z, v1.x,v1.y,v1.z, v2.x,v2.y,v2.z});
+
+      object_ids.push_back(obj_id);      // <- ya alinea con object_prim_offset[obj_id]
+      prim_ids.push_back((int)j);        // índice local en la malla
     }
+  }
 
+  object_ids_mem.alloc(object_ids.size());
+  prim_ids_mem.alloc(prim_ids.size());
+  for (size_t i = 0; i < object_ids.size(); ++i) {
+    object_ids_mem[i] = object_ids[i];
+    prim_ids_mem[i]   = prim_ids[i];
+  }
+  object_ids_mem.copy_to_device();
+  prim_ids_mem.copy_to_device();
 
-    object_ids_mem.alloc(object_ids.size() * sizeof(int));
-    
-    for(int i = 0; i < object_ids.size(); i++){
-        object_ids_mem[i] = object_ids[i];
-    }
-
-    object_ids_mem.copy_to_device();
-    
-
-    std::cout << "building..." << std::endl;
-    m_backend->set_tris(tris);
-    std::cout << "built!" << std::endl;
-
+  m_backend->set_tris(tris);
 }
 
 CCL_NAMESPACE_END

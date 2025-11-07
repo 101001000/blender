@@ -8,6 +8,11 @@
 # NOTE: We don't allow in-source builds. This causes no end of troubles because
 # all out-of-source builds will use the CMakeCache.txt file there and even
 # build the libs and objects in it.
+
+set(PRT_EXTRA_KERNELS simple_integrator_init_from_camera simple_integrator_reset simple_integrator_intersect_closest simple_prefix_sum simple_integrator_sorted_paths_array simple_integrator_shade_surface simple_integrator_shade_background simple_integrator_queued_paths_array simple_integrator_compact_paths_array simple_integrator_terminated_paths_array simple_integrator_compact_states simple_adaptive_sampling_convergence_check simple_integrator_intersect_shadow simple_integrator_shade_shadow simple_integrator_intersect_shadow simple_integrator_queued_shadow_paths_array simple_integrator_terminated_shadow_paths_array simple_integrator_compact_shadow_paths_array simple_integrator_compact_shadow_states)
+set(KA_USE_EMBREE_CPU ON)
+set(embree_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/cmake/embree)
+
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   if(NOT DEFINED WITH_IN_SOURCE_BUILD)
     message(FATAL_ERROR

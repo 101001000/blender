@@ -283,7 +283,10 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
     case DeviceKernel::DEVICE_KERNEL_ADAPTIVE_SAMPLING_CONVERGENCE_CHECK: {
         struct KernelArgs {
             float *render_buffer;
-            int sx, sy, sw, sh;
+            int sx;
+            int sy;
+            int sw;
+            int sh;
             float threshold;
             int reset;
             int offset;
@@ -291,7 +294,7 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
             uint *num_active_pixels;
         };
 
-        assert(args.count == 9);
+        assert(args.count == 10);
 
         KernelArgs ka;
         ka.render_buffer = get_pointer<float>(args.values[0]);
@@ -333,7 +336,7 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
             int stride;
         };
 
-        assert(args.count == 6);
+        assert(args.count == 7);
 
         KernelArgs ka;
         ka.render_buffer = get_pointer<float>(args.values[0]);
@@ -355,7 +358,7 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
             int stride;
         };
 
-        assert(args.count == 6);
+        assert(args.count == 7);
 
         KernelArgs ka;
         ka.render_buffer = get_pointer<float>(args.values[0]);
@@ -400,9 +403,78 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
         device->m_backend->parallel_invoke("simple_integrator_shade_shadow", dummy_rays, dummy_output, &ka, sizeof(ka));
         break;
     }
+    case DeviceKernel::DEVICE_KERNEL_INTEGRATOR_QUEUED_SHADOW_PATHS_ARRAY: {
+        struct KernelArgs {
+            int num_states;
+            int *indices;
+            int *num_indices;
+            int kernel_index;
+        };
 
+        assert(args.count == 4);
 
+        KernelArgs ka;
+        ka.num_states = get_scalar<int>(args.values[0]);
+        ka.indices = get_pointer<int>(args.values[1]);
+        ka.num_indices = get_pointer<int>(args.values[2]);
+        ka.kernel_index = get_scalar<int>(args.values[3]);
+        device->m_backend->parallel_invoke("simple_integrator_queued_shadow_paths_array", dummy_rays, dummy_output, &ka, sizeof(ka));
+        break;
+    }
+    case DeviceKernel::DEVICE_KERNEL_INTEGRATOR_TERMINATED_SHADOW_PATHS_ARRAY: {
+        struct KernelArgs {
+            int num_states;
+            int *indices;
+            int *num_indices;
+            int indices_offset;
+        };
 
+        assert(args.count == 4);
+
+        KernelArgs ka;
+        ka.num_states = get_scalar<int>(args.values[0]);
+        ka.indices = get_pointer<int>(args.values[1]);
+        ka.num_indices = get_pointer<int>(args.values[2]);
+        ka.indices_offset = get_scalar<int>(args.values[3]);
+        device->m_backend->parallel_invoke("simple_integrator_terminated_shadow_paths_array", dummy_rays, dummy_output, &ka, sizeof(ka));
+        break;
+    }    
+    case DeviceKernel::DEVICE_KERNEL_INTEGRATOR_COMPACT_SHADOW_PATHS_ARRAY: {
+        struct KernelArgs {
+            int num_states;
+            int *indices;
+            int *num_indices;
+            int num_active_paths;
+        };
+
+        assert(args.count == 4);
+
+        KernelArgs ka;
+        ka.num_states = get_scalar<int>(args.values[0]);
+        ka.indices = get_pointer<int>(args.values[1]);
+        ka.num_indices = get_pointer<int>(args.values[2]);
+        ka.num_active_paths = get_scalar<int>(args.values[3]);
+        device->m_backend->parallel_invoke("simple_integrator_compact_shadow_paths_array", dummy_rays, dummy_output, &ka, sizeof(ka));
+        break;
+    }
+    case DeviceKernel::DEVICE_KERNEL_INTEGRATOR_COMPACT_SHADOW_STATES: {
+        struct KernelArgs {
+            int *active_terminated_states;
+            int active_states_offset;
+            int terminated_states_offset;
+            int work_size;
+        };
+
+        assert(args.count == 4);
+
+        KernelArgs ka;
+        ka.active_terminated_states = get_pointer<int>(args.values[0]);
+        ka.active_states_offset = get_scalar<int>(args.values[1]);
+        ka.terminated_states_offset = get_scalar<int>(args.values[2]);
+        ka.work_size = get_scalar<int>(args.values[3]);
+        device->m_backend->parallel_invoke("simple_integrator_compact_shadow_states", dummy_rays, dummy_output, &ka, sizeof(ka));
+        break;
+    }
     default:
         std::cout << "unknown kernel " << device_kernel_as_string(kernel) << std::endl;
         break;
