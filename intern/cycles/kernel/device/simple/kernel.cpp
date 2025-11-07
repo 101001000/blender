@@ -27,28 +27,80 @@
   #include "kernel/device/simple/compat.h"
   #include "util/half.h"
   #include "util/types.h"
+  #include "util/texture.h"
 
   
   template<typename T>
   ccl_device_forceinline T ccl_gpu_tex_object_read_2D(const ccl_gpu_tex_object_2D texobj,
                                                       const float fx, const float fy)
   {
-
     const CPUTexture2D* tex = reinterpret_cast<const CPUTexture2D*>(texobj);
-    const float u = fx * tex->width  - 0.5f;
-    const float v = fy * tex->height - 0.5f;
+    float cfx = fx > 1.0f ? 1.0f : (fx < 0.0f ? 0.0f : fx);
+    float cfy = fy > 1.0f ? 1.0f : (fy < 0.0f ? 0.0f : fy);
+    
+    const int ix = static_cast<int>(cfx * tex->width);
+    const int iy = static_cast<int>(cfy * tex->height);
     const int channels = tex->channels;
-    const int ix = clampi(int(std::floor(u + 0.5f)), 0, tex->width  - 1);
-    const int iy = clampi(int(std::floor(v + 0.5f)), 0, tex->height - 1);
-    const size_t idx = ((size_t)iy * tex->width + ix);
-    const unsigned char *ptr = reinterpret_cast<const unsigned char*>(tex->pixels);
+    const int data_type = tex->data_type;
 
-    if constexpr (sizeof(T) == 16) {
-      return make_float4(float(ptr[idx * channels]), float(ptr[idx * channels + 1]), float(ptr[idx * channels + 2]), float(ptr[idx * channels + 3]));
-    } else if constexpr (std::is_same_v<T, float>) {
-      T result = ptr[idx * channels];
-      return result;
+
+    const size_t idx = ((size_t)iy * tex->width + ix);
+
+    switch(data_type){
+      case IMAGE_DATA_TYPE_FLOAT4: {
+        if constexpr (std::is_same_v<T, float4>) {
+          return *reinterpret_cast<const float4*>(tex->pixels + idx * channels);
+        } else if constexpr (std::is_same_v<T, float>) {
+          return (*reinterpret_cast<const float4*>(tex->pixels + idx * channels)).x;
+        }
+      }
+      case IMAGE_DATA_TYPE_BYTE4: {
+        if constexpr (std::is_same_v<T, float4>) {
+          uchar4 dat = *reinterpret_cast<const uchar4*>(tex->pixels + idx * channels);
+          return make_float4(dat.x / 255.0f, dat.y / 255.0f, dat.z / 255.0f, dat.w / 255.0f);
+        } else if constexpr (std::is_same_v<T, float>) {
+          uchar4 dat = *reinterpret_cast<const uchar4*>(tex->pixels + idx * channels);
+          return dat.x / 255.0f;
+        }
+      }
+      case IMAGE_DATA_TYPE_HALF4: {
+        if constexpr (std::is_same_v<T, float4>) {
+          half4 dat = *reinterpret_cast<const half4*>(tex->pixels + idx * channels);
+          return make_float4(dat.x, dat.y, dat.z, dat.w);
+        } else if constexpr (std::is_same_v<T, float>) {
+          half4 dat = *reinterpret_cast<const half4*>(tex->pixels + idx * channels);
+          return dat.x;
+        }
+      }
+      case IMAGE_DATA_TYPE_FLOAT: {
+        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_FLOAT");
+      }
+      case IMAGE_DATA_TYPE_BYTE: {
+        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_BYTE");
+      }
+      case IMAGE_DATA_TYPE_HALF: {
+        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_HALF");
+      }
+      case IMAGE_DATA_TYPE_USHORT4: {
+        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_USHORT4");
+      }
+      case IMAGE_DATA_TYPE_USHORT: {
+        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_USHORT");
+      }
+      case IMAGE_DATA_TYPE_NANOVDB_FLOAT: {
+        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_NANOVDB_FLOAT");
+      }
+      case IMAGE_DATA_TYPE_NANOVDB_FLOAT3: {
+        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_NANOVDB_FLOAT3");
+      }
+      case IMAGE_DATA_TYPE_NANOVDB_FPN: {
+        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_NANOVDB_FPN");
+      }
+      case IMAGE_DATA_TYPE_NANOVDB_FP16: {
+        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_NANOVDB_FP16");
+      }
     }
+
     throw std::runtime_error("Unsupported type for texture read");
   }
 
@@ -56,6 +108,7 @@
   ccl_device_forceinline T ccl_gpu_tex_object_read_3D(const ccl_gpu_tex_object_3D texobj,
                                                       const float fx, const float fy, const float fz)
   {
+    throw std::runtime_error("Unsupported type for texture 3D read");
     //std::cout << "reading 3D text "  << std::endl;
     const CPUTexture3D &tex = *texobj;
 

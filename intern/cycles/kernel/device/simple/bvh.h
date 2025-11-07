@@ -37,8 +37,8 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
     prt_ray.direction[1] = ray->D.y;
     prt_ray.direction[2] = ray->D.z;
     prt_ray.tmin = ray->tmin;
-    prt_ray.tmax = ray->tmax;
-    prt_ray.self_id = -1;
+    prt_ray.tmax = ray->tmax;   
+    prt_ray.self_id = ray->self.prim;
     auto hit = prt::closest_hit(prt_ray);
 
 
@@ -122,7 +122,7 @@ ccl_device_intersect bool scene_intersect_shadow_all(KernelGlobals kg,
   prt_ray.direction[2] = ray->D.z;
   prt_ray.tmin = ray->tmin;
   prt_ray.tmax = ray->tmax;
-  prt_ray.self_id = -1;
+  prt_ray.self_id = ray->self.prim;
 
   auto hit = prt::closest_hit(prt_ray);
 

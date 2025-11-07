@@ -79,6 +79,7 @@ void SimpleDevice::tex_alloc(device_texture &mem)
       int         width;
       int         height;
       int         channels;  
+      int         data_type;
     };
 
     std::cout << "Allocating " << mem.data_type << std::endl;
@@ -88,7 +89,7 @@ void SimpleDevice::tex_alloc(device_texture &mem)
     dev_tex_info.width = mem.info.width;
     dev_tex_info.height = mem.info.height;
     dev_tex_info.channels = mem.data_elements;
-
+    dev_tex_info.data_type = mem.data_type;
     
     void* tex_info_ptr = m_backend->device_malloc(sizeof(CPUTexture2D));
     m_backend->device_copy_to(tex_info_ptr, &dev_tex_info, sizeof(CPUTexture2D));
@@ -401,33 +402,36 @@ void SimpleDevice::build_bvh(BVH *bvh, Progress &progress, bool refit)
   std::vector<int> object_ids;
   std::vector<int> prim_ids;
 
-  // Mapea cada Object* a su blender_instance_id (posición en bvh->objects)
-  std::unordered_map<Object*, int> obj2idx;
-  int blender_instance_id = 0;
-  for (Object* ob : bvh->objects) {
-    obj2idx[ob] = blender_instance_id++;
-  }
 
   for (Object *obj : bvh->objects) {
+
+    if(!obj->is_traceable()) continue;
+
+    std::cout << "obj " << obj->name << std::endl;
     Geometry* geometry = obj->get_geometry();
     if (!geometry->is_mesh()) continue;
     Mesh* mesh = static_cast<Mesh*>(geometry);
     if (geometry->index == -1) continue;
 
+    std::cout << "mesh " << mesh->name << std::endl;
     const Transform &M = obj->get_tfm();
-    auto tp = [&](const float3 &p){ return transform_point(&M, p); };
-
-    const int obj_id = obj2idx[obj]; // <- usa el mismo id que HIPRT (“user_instance_id”)
+    auto tp = [&](const float3 &p){
+      if(!geometry->transform_applied){
+        return transform_point(&M, p);
+      }
+      return p;
+    };
 
     for (size_t j = 0; j < mesh->num_triangles(); ++j) {
       Mesh::Triangle tri = mesh->get_triangle(j);
+      
       float3 v0 = tp(mesh->get_verts()[tri.v[0]]);
       float3 v1 = tp(mesh->get_verts()[tri.v[1]]);
       float3 v2 = tp(mesh->get_verts()[tri.v[2]]);
       tris.push_back({v0.x,v0.y,v0.z, v1.x,v1.y,v1.z, v2.x,v2.y,v2.z});
 
-      object_ids.push_back(obj_id);      // <- ya alinea con object_prim_offset[obj_id]
-      prim_ids.push_back((int)j);        // índice local en la malla
+      object_ids.push_back(obj->get_device_index()); 
+      prim_ids.push_back((int)j);
     }
   }
 

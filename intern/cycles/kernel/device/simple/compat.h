@@ -72,6 +72,7 @@ struct CPUTexture2D {
   int         width;
   int         height;
   int         channels;  /* 1, 3, 4 …                                */
+  int         data_type;
   /* flags de interpolación, extensión, etc. si los necesitas        */
 };
 
