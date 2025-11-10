@@ -391,15 +391,13 @@ void SimpleDevice::build_bvh(BVH *bvh, Progress &progress, bool refit)
 
   for (Object *obj : bvh->objects) {
 
-    if(!obj->is_traceable()) continue;
-
-    std::cout << "obj " << obj->name << std::endl;
     Geometry* geometry = obj->get_geometry();
-    if (!geometry->is_mesh()) continue;
+    if (!geometry->is_mesh()){
+      std::cout << "Dropping non-mesh geometry " << geometry->name << std::endl;
+      continue;
+    }
     Mesh* mesh = static_cast<Mesh*>(geometry);
-    if (geometry->index == -1) continue;
 
-    std::cout << "mesh " << mesh->name << std::endl;
     const Transform &M = obj->get_tfm();
     auto tp = [&](const float3 &p){
       if(!geometry->transform_applied){

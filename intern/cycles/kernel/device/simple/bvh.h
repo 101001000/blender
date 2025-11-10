@@ -103,50 +103,162 @@ ccl_device_intersect bool scene_intersect_volume(KernelGlobals kg,
 }
 #endif
 
+bool anyhit_shader(int prim_, uint object_, uint visibility_, float u, float v, uint max_hits, uint& num_recorded_hits, uint& num_hits, IntegratorShadowState state, float tmax, RaySelfPrimitives self, bool& clamp_far)
+{
+#ifdef __SHADOW_RECORD_ALL__
+  int prim = prim_;
+  const uint object = object_;
+#  ifdef __VISIBILITY_FLAG__
+  const uint visibility = visibility_;
+  if ((kernel_data_fetch(objects, object).visibility & visibility) == 0) {
+    return false;
+  }
+#  endif
+
+  int type = 0;
+  /* Triangle. */
+  type = kernel_data_fetch(objects, object).primitive_type;
+
+  if (intersection_skip_self_shadow(self, object, prim)) {
+    return false;
+  }
+
+#  ifdef __SHADOW_LINKING__
+  if (intersection_skip_shadow_link(nullptr, self, object)) {
+    return false;
+  }
+#  endif
+
+#  ifndef __TRANSPARENT_SHADOWS__
+  /* No transparent shadows support compiled in, make opaque. */
+  return true;
+#  else
+
+  /* If no transparent shadows, all light is blocked and we can stop immediately. */
+  if (num_hits >= max_hits ||
+      !(intersection_get_shader_flags(nullptr, prim, type) & SD_HAS_TRANSPARENT_SHADOW))
+  {
+    return true;
+  }
+
+  /* Record transparent intersection. */
+  num_recorded_hits++;
+  num_hits++;
+
+  uint record_index = num_recorded_hits;
+
+  const uint max_record_hits = min(max_hits, INTEGRATOR_SHADOW_ISECT_SIZE);
+  if (record_index >= max_record_hits) {
+    /* If maximum number of hits reached, find a hit to replace. */
+    float max_recorded_t = INTEGRATOR_STATE_ARRAY(state, shadow_isect, 0, t);
+    uint max_recorded_hit = 0;
+
+    for (int i = 1; i < max_record_hits; i++) {
+      const float isect_t = INTEGRATOR_STATE_ARRAY(state, shadow_isect, i, t);
+      if (isect_t > max_recorded_t) {
+        max_recorded_t = isect_t;
+        max_recorded_hit = i;
+      }
+    }
+
+    if (tmax >= max_recorded_t) {
+      /* Accept hit, so that OptiX won't consider any more hits beyond the distance of the
+       * current hit anymore. */
+      clamp_far = true;
+      return false;
+    }
+
+    record_index = max_recorded_hit;
+  }
+
+  INTEGRATOR_STATE_ARRAY_WRITE(state, shadow_isect, record_index, u) = u;
+  INTEGRATOR_STATE_ARRAY_WRITE(state, shadow_isect, record_index, v) = v;
+  INTEGRATOR_STATE_ARRAY_WRITE(state, shadow_isect, record_index, t) = tmax;
+  INTEGRATOR_STATE_ARRAY_WRITE(state, shadow_isect, record_index, prim) = prim;
+  INTEGRATOR_STATE_ARRAY_WRITE(state, shadow_isect, record_index, object) = object;
+  INTEGRATOR_STATE_ARRAY_WRITE(state, shadow_isect, record_index, type) = type;
+
+  /* Continue tracing. */
+  return false;
+#  endif /* __TRANSPARENT_SHADOWS__ */
+#endif   /* __SHADOW_RECORD_ALL__ */
+}
+
 #ifdef __SHADOW_RECORD_ALL__
 ccl_device_intersect bool scene_intersect_shadow_all(KernelGlobals kg,
                                                      IntegratorShadowState state,
-                                                     const ccl_private Ray *ray,
+                                                     const ccl_private Ray *ray_,
                                                      const uint visibility,
                                                      const uint max_hits,
                                                      ccl_private uint *num_recorded_hits,
                                                      ccl_private float *throughput)
 {
+  
   *num_recorded_hits = 0u;
   *throughput = 1.0f;
-
-  /* Si la máscara es 0, no bloquea nada. */
-  if (visibility == 0u) {
+  if (!scene_intersect_valid(ray_)) {
     return false;
   }
 
-  if (!scene_intersect_valid(ray)) {
-    return false;
-  }
-
-  prt::Ray prt_ray;
-  prt_ray.origin[0] = ray->P.x;
-  prt_ray.origin[1] = ray->P.y;
-  prt_ray.origin[2] = ray->P.z;
-  prt_ray.direction[0] = ray->D.x;
-  prt_ray.direction[1] = ray->D.y;
-  prt_ray.direction[2] = ray->D.z;
-  prt_ray.tmin = ray->tmin;
-  prt_ray.tmax = ray->tmax;
-  //prt_ray.self_id = ray->self.prim;
-
-  prt_ray.self_id = -1;
   
-  auto hit = prt::closest_hit(prt_ray);
-
-  if (!hit.valid) {
-    return false;
+  Ray ray = *ray_;
+  prt::Ray prt_ray;
+  prt_ray.origin[0] = ray.P.x;
+  prt_ray.origin[1] = ray.P.y;
+  prt_ray.origin[2] = ray.P.z;
+  prt_ray.direction[0] = ray.D.x;
+  prt_ray.direction[1] = ray.D.y;
+  prt_ray.direction[2] = ray.D.z;
+  prt_ray.tmin = ray.tmin;
+  prt_ray.tmax = ray.tmax;
+  
+  int self_object_size = 0;
+  int self_prim_id = 0;
+  if(ray.self.object != OBJECT_NONE){
+      //self_object_id = kernel_data_fetch(object_ids, ray->self.object);
+      self_object_size = kernel_data_fetch(object_sizes, ray.self.object);
+      self_prim_id = ray.self.prim - kernel_data_fetch(object_prim_offset, ray.self.object);
   }
 
-  /* Versión opaca: cualquier hit bloquea. */
-  *num_recorded_hits = 1u;
-  *throughput = 0.0f;
-  return true;
+
+  prt_ray.self_id = self_object_size + self_prim_id;
+
+  uint num_hits = 0;
+  bool clamp_far = false;
+
+  // Anyhit simulation:
+  for(int i = 0; i < max_hits; i++){
+   
+    auto hit = prt::closest_hit(prt_ray);   
+    if (hit.valid) {
+      int self_object_id = kernel_data_fetch(object_ids, hit.primitive_id);
+      self_object_size = kernel_data_fetch(object_sizes, self_object_id);
+      self_prim_id = hit.primitive_id - kernel_data_fetch(object_prim_offset, self_object_id);
+      prt_ray.self_id = self_object_size + self_prim_id;
+      prt_ray.tmin = hit.t;
+    } else {
+      break;
+    }
+
+    bool clamp_far = false;
+
+    const int object_id = kernel_data_fetch(object_ids, hit.primitive_id);
+    const int prim_id = kernel_data_fetch(prim_ids, hit.primitive_id);
+    const int off = kernel_data_fetch(object_prim_offset, object_id);
+    
+    // call to the anyhit "shader"
+    // two kind of returns: False (ignore ray) or True (terminate ray)
+    int prim_ = prim_id;
+    uint object_ = object_id;
+    RaySelfPrimitives self = ray.self;
+    bool terminate = anyhit_shader(prim_, object_, visibility, hit.u, hit.v, max_hits, *num_recorded_hits, num_hits, state, hit.t, self, clamp_far);
+    if(terminate){
+      return true;
+      break;
+    }
+    if (clamp_far) prt_ray.tmax = hit.t;    
+  }
+  return false;
 }
 #endif
 
