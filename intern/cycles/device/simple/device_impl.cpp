@@ -12,7 +12,7 @@
 
 CCL_NAMESPACE_BEGIN
 
-SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profiler, bool headless) : GPUDevice(info, stats, profiler, headless), object_ids_mem(this, "object_ids", MEM_GLOBAL), prim_ids_mem(this, "prim_ids", MEM_GLOBAL) {
+SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profiler, bool headless) : GPUDevice(info, stats, profiler, headless), object_ids_mem(this, "object_ids", MEM_GLOBAL), prim_ids_mem(this, "prim_ids", MEM_GLOBAL), object_sizes_mem(this, "object_sizes", MEM_GLOBAL) {
 
     prt::kernelapi_init({{"kernel_globals", sizeof(KernelParamsSimple)}, {"warp_offset", sizeof(int*)}});
 
@@ -80,6 +80,7 @@ void SimpleDevice::tex_alloc(device_texture &mem)
       int         height;
       int         channels;  
       int         data_type;
+      int         wrap_type;
     };
 
     std::cout << "Allocating " << mem.data_type << std::endl;
@@ -90,6 +91,8 @@ void SimpleDevice::tex_alloc(device_texture &mem)
     dev_tex_info.height = mem.info.height;
     dev_tex_info.channels = mem.data_elements;
     dev_tex_info.data_type = mem.data_type;
+    dev_tex_info.wrap_type = mem.info.extension;
+    
     
     void* tex_info_ptr = m_backend->device_malloc(sizeof(CPUTexture2D));
     m_backend->device_copy_to(tex_info_ptr, &dev_tex_info, sizeof(CPUTexture2D));
@@ -129,6 +132,7 @@ void SimpleDevice::const_copy_to(const char *name, void *host_ptr, const size_t 
       }
     KERNEL_DATA_ARRAY(int, object_ids)
     KERNEL_DATA_ARRAY(int, prim_ids)
+    KERNEL_DATA_ARRAY(int, object_sizes)
     KERNEL_DATA_ARRAY(KernelData, data)
     KERNEL_DATA_ARRAY(IntegratorStateGPU, integrator_state)
     #include "kernel/data_arrays.h"
@@ -374,34 +378,16 @@ unique_ptr<DeviceQueue> SimpleDevice::gpu_queue_create() {
     return make_unique<SimpleDeviceQueue>(this);
 }
 
-std::string geometry_type_name(Geometry::Type type){
-  /*
-    if (type == Geometry::Type::MESH) {
-        return "mesh";
-    }
-    if (type == Geometry::Type::HAIR) {
-        return "hair";
-    }
-    if (type == Geometry::Type::VOLUME) {
-        return "volume";
-    }
-    if (type == Geometry::Type::POINTCLOUD) {
-        return "pointcloud";
-    }
-    if (type == Geometry::Type::LIGHT) {
-        return "light";
-    }*/
-    return "unknown";
-}
-
 void SimpleDevice::build_bvh(BVH *bvh, Progress &progress, bool refit)
 {
   if (!bvh->params.top_level) return;
 
   std::vector<std::array<float,9>> tris;
   std::vector<int> object_ids;
+  std::vector<int> object_sizes;
   std::vector<int> prim_ids;
 
+  object_sizes.push_back(0);
 
   for (Object *obj : bvh->objects) {
 
@@ -422,14 +408,17 @@ void SimpleDevice::build_bvh(BVH *bvh, Progress &progress, bool refit)
       return p;
     };
 
+    object_sizes.push_back(mesh->num_triangles() + object_sizes.back());
+
     for (size_t j = 0; j < mesh->num_triangles(); ++j) {
       Mesh::Triangle tri = mesh->get_triangle(j);
       
       float3 v0 = tp(mesh->get_verts()[tri.v[0]]);
       float3 v1 = tp(mesh->get_verts()[tri.v[1]]);
       float3 v2 = tp(mesh->get_verts()[tri.v[2]]);
-      tris.push_back({v0.x,v0.y,v0.z, v1.x,v1.y,v1.z, v2.x,v2.y,v2.z});
 
+      
+      tris.push_back({v0.x,v0.y,v0.z, v1.x,v1.y,v1.z, v2.x,v2.y,v2.z});
       object_ids.push_back(obj->get_device_index()); 
       prim_ids.push_back((int)j);
     }
@@ -437,12 +426,20 @@ void SimpleDevice::build_bvh(BVH *bvh, Progress &progress, bool refit)
 
   object_ids_mem.alloc(object_ids.size());
   prim_ids_mem.alloc(prim_ids.size());
+  object_sizes_mem.alloc(object_sizes.size());
+
   for (size_t i = 0; i < object_ids.size(); ++i) {
     object_ids_mem[i] = object_ids[i];
     prim_ids_mem[i]   = prim_ids[i];
   }
+
+  for (size_t i = 0; i < object_sizes.size(); ++i) {
+    object_sizes_mem[i] = object_sizes[i];
+  }
+
   object_ids_mem.copy_to_device();
   prim_ids_mem.copy_to_device();
+  object_sizes_mem.copy_to_device();
 
   m_backend->set_tris(tris);
 }

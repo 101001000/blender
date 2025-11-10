@@ -29,20 +29,40 @@
   #include "util/types.h"
   #include "util/texture.h"
 
-  
+  float clamp_mode(float f, int mode){
+    switch(mode){
+      case EXTENSION_REPEAT:
+         f -= floor(f);
+        break;
+      case EXTENSION_CLIP:
+        f = f < 0.0f ? 0.0f : f > 1.0f ? 1.0f : f;
+        break;
+      case EXTENSION_MIRROR:
+        throw std::runtime_error("Unsupported wrap type EXTENSION_MIRROR");
+        break;
+      case EXTENSION_EXTEND:
+        throw std::runtime_error("Unsupported wrap type EXTENSION_EXTEND");
+        break;
+      default:
+        throw std::runtime_error("Unsupported wrap type");
+        break;
+    }
+
+   return f;
+  }
+
   template<typename T>
   ccl_device_forceinline T ccl_gpu_tex_object_read_2D(const ccl_gpu_tex_object_2D texobj,
                                                       const float fx, const float fy)
   {
     const CPUTexture2D* tex = reinterpret_cast<const CPUTexture2D*>(texobj);
-    float cfx = fx > 1.0f ? 1.0f : (fx < 0.0f ? 0.0f : fx);
-    float cfy = fy > 1.0f ? 1.0f : (fy < 0.0f ? 0.0f : fy);
+    float cfx = clamp_mode(fx, tex->wrap_type);
+    float cfy = clamp_mode(fy, tex->wrap_type);
     
     const int ix = static_cast<int>(cfx * tex->width);
     const int iy = static_cast<int>(cfy * tex->height);
     const int channels = tex->channels;
     const int data_type = tex->data_type;
-
 
     const size_t idx = ((size_t)iy * tex->width + ix);
 

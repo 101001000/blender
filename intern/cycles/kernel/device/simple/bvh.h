@@ -37,8 +37,19 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
     prt_ray.direction[1] = ray->D.y;
     prt_ray.direction[2] = ray->D.z;
     prt_ray.tmin = ray->tmin;
-    prt_ray.tmax = ray->tmax;   
-    prt_ray.self_id = ray->self.prim;
+    prt_ray.tmax = ray->tmax;
+
+    int self_object_size = 0;
+    int self_prim_id = 0;
+    if(ray->self.object != OBJECT_NONE){
+        //self_object_id = kernel_data_fetch(object_ids, ray->self.object);
+        self_object_size = kernel_data_fetch(object_sizes, ray->self.object);
+        self_prim_id = ray->self.prim - kernel_data_fetch(object_prim_offset, ray->self.object);
+    }
+
+
+    prt_ray.self_id = self_object_size + self_prim_id;
+
     auto hit = prt::closest_hit(prt_ray);
 
 
@@ -57,7 +68,7 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
     isect->t = hit.t;
     isect->u = hit.u;
     isect->v = hit.v;
-    isect->prim = prim_id + off;
+    isect->prim = off + prim_id;
     isect->type = PRIMITIVE_TRIANGLE;
     isect->object = id;
     return true;
@@ -101,7 +112,7 @@ ccl_device_intersect bool scene_intersect_shadow_all(KernelGlobals kg,
                                                      ccl_private uint *num_recorded_hits,
                                                      ccl_private float *throughput)
 {
-    *num_recorded_hits = 0u;
+  *num_recorded_hits = 0u;
   *throughput = 1.0f;
 
   /* Si la máscara es 0, no bloquea nada. */
@@ -122,8 +133,10 @@ ccl_device_intersect bool scene_intersect_shadow_all(KernelGlobals kg,
   prt_ray.direction[2] = ray->D.z;
   prt_ray.tmin = ray->tmin;
   prt_ray.tmax = ray->tmax;
-  prt_ray.self_id = ray->self.prim;
+  //prt_ray.self_id = ray->self.prim;
 
+  prt_ray.self_id = -1;
+  
   auto hit = prt::closest_hit(prt_ray);
 
   if (!hit.valid) {

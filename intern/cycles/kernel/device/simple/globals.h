@@ -23,6 +23,7 @@ struct KernelParamsSimple {
     #define KERNEL_DATA_ARRAY(type, name) const type *name = nullptr;
     KERNEL_DATA_ARRAY(int, object_ids)
     KERNEL_DATA_ARRAY(int, prim_ids)
+    KERNEL_DATA_ARRAY(int, object_sizes)
     KernelData data;
     IntegratorStateGPU integrator_state;
     #include "kernel/data_arrays.h"
