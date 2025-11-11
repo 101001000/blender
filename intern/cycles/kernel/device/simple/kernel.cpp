@@ -51,82 +51,71 @@
    return f;
   }
 
+
   template<typename T>
   ccl_device_forceinline T ccl_gpu_tex_object_read_2D(const ccl_gpu_tex_object_2D texobj,
-                                                      const float fx, const float fy)
+                                                      float fx, float fy)
   {
     const CPUTexture2D* tex = reinterpret_cast<const CPUTexture2D*>(texobj);
-    float cfx = clamp_mode(fx, tex->wrap_type);
-    float cfy = clamp_mode(fy, tex->wrap_type);
-    
+  
+    const float cfx = clamp_mode(fx, tex->wrap_type);
+    const float cfy = clamp_mode(fy, tex->wrap_type);
+  
     const int ix = static_cast<int>(cfx * tex->width);
     const int iy = static_cast<int>(cfy * tex->height);
     const int channels = tex->channels;
     const int data_type = tex->data_type;
-
     const size_t idx = ((size_t)iy * tex->width + ix);
-
-    switch(data_type){
+  
+    switch (data_type) {
       case IMAGE_DATA_TYPE_FLOAT4: {
-        if constexpr (std::is_same_v<T, float4>) {
-          return *reinterpret_cast<const float4*>(tex->pixels + idx * channels);
-        } else if constexpr (std::is_same_v<T, float>) {
-          return (*reinterpret_cast<const float4*>(tex->pixels + idx * channels)).x;
-        }
+        const float4 v = reinterpret_cast<const float4*>(tex->pixels)[idx];
+        if constexpr (std::is_same_v<T,float4>) return v;
+        if constexpr (std::is_same_v<T,float>)  return v.x;
+        break;
       }
       case IMAGE_DATA_TYPE_BYTE4: {
-        if constexpr (std::is_same_v<T, float4>) {
-          uchar4 dat = *reinterpret_cast<const uchar4*>(tex->pixels + idx * channels);
-          return make_float4(dat.x / 255.0f, dat.y / 255.0f, dat.z / 255.0f, dat.w / 255.0f);
-        } else if constexpr (std::is_same_v<T, float>) {
-          uchar4 dat = *reinterpret_cast<const uchar4*>(tex->pixels + idx * channels);
-          return dat.x / 255.0f;
-        }
+        const uchar4 u = reinterpret_cast<const uchar4*>(tex->pixels)[idx];
+        if constexpr (std::is_same_v<T,float4>) return make_float4(u.x/255.f,u.y/255.f,u.z/255.f,u.w/255.f);
+        if constexpr (std::is_same_v<T,float>)  return u.x/255.f;
+        break;
       }
       case IMAGE_DATA_TYPE_HALF4: {
-        if constexpr (std::is_same_v<T, float4>) {
-          half4 dat = *reinterpret_cast<const half4*>(tex->pixels + idx * channels);
-          return make_float4(dat.x, dat.y, dat.z, dat.w);
-        } else if constexpr (std::is_same_v<T, float>) {
-          half4 dat = *reinterpret_cast<const half4*>(tex->pixels + idx * channels);
-          return dat.x;
-        }
-      }
-      case IMAGE_DATA_TYPE_FLOAT: {
-        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_FLOAT");
-      }
-      case IMAGE_DATA_TYPE_BYTE: {
-        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_BYTE");
+        const unsigned char* p = reinterpret_cast<const unsigned char*>(tex->pixels) + idx*8; // 4*2 bytes
+        const float g  = p[1] / 255.f;   // byte alto de R (== G == B)
+        const float a  = (p[7] == 255) ? 1.f : p[7] / 255.f; // 0xFFFF -> 1
+        if constexpr (std::is_same_v<T,float>)  return g;
+        if constexpr (std::is_same_v<T,float4>) return make_float4(g, g, g, a);
+        break;
       }
       case IMAGE_DATA_TYPE_HALF: {
-        if constexpr (std::is_same_v<T, float4>) {
-          half dat = *reinterpret_cast<const half*>(tex->pixels + idx * channels);
-          return make_float4(dat, dat, dat, dat);
-        } else if constexpr (std::is_same_v<T, float>) {
-          half dat = *reinterpret_cast<const half*>(tex->pixels + idx * channels);
-          return dat;
-        }
-      }
-      case IMAGE_DATA_TYPE_USHORT4: {
-        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_USHORT4");
-      }
-      case IMAGE_DATA_TYPE_USHORT: {
-        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_USHORT");
-      }
-      case IMAGE_DATA_TYPE_NANOVDB_FLOAT: {
-        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_NANOVDB_FLOAT");
-      }
-      case IMAGE_DATA_TYPE_NANOVDB_FLOAT3: {
-        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_NANOVDB_FLOAT3");
-      }
-      case IMAGE_DATA_TYPE_NANOVDB_FPN: {
-        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_NANOVDB_FPN");
-      }
-      case IMAGE_DATA_TYPE_NANOVDB_FP16: {
-        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_NANOVDB_FP16");
-      }
-    }
+        const unsigned char* p = reinterpret_cast<const unsigned char*>(tex->pixels) + idx * 2;
 
+        // reconstruye los 16 bits del half (little-endian)
+        const uint16_t hb = uint16_t(p[0]) | (uint16_t(p[1]) << 8);
+      
+        float s = half_to_float_image(half(hb));
+      
+        // fallback para buffers que realmente llevan un uchar en el byte alto
+        if (!std::isfinite(s) || s < 0.0f || s > 1.0f) {
+          s = p[1] / 255.0f;
+        }
+      
+        if constexpr (std::is_same_v<T, float>)  return s;
+        if constexpr (std::is_same_v<T, float4>) return make_float4(s, s, s, 1.0f);
+        break;
+      }
+      case IMAGE_DATA_TYPE_FLOAT:
+      case IMAGE_DATA_TYPE_BYTE:
+      case IMAGE_DATA_TYPE_USHORT4:
+      case IMAGE_DATA_TYPE_USHORT:
+      case IMAGE_DATA_TYPE_NANOVDB_FLOAT:
+      case IMAGE_DATA_TYPE_NANOVDB_FLOAT3:
+      case IMAGE_DATA_TYPE_NANOVDB_FPN:
+      case IMAGE_DATA_TYPE_NANOVDB_FP16:
+        break;
+    }
+  
     throw std::runtime_error("Unsupported type for texture read");
   }
 
