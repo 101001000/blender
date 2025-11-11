@@ -525,6 +525,64 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
         device->m_backend->parallel_invoke("simple_integrator_intersect_subsurface", dummy_rays, dummy_output, &ka, sizeof(ka));
         break;
     }
+    case DeviceKernel::DEVICE_KERNEL_FILM_CONVERT_COMBINED_HALF_RGBA:{
+        struct KernelArgs{
+            KernelFilmConvert kfilm_convert;
+            uchar4 *rgba;
+            float *render_buffer;
+            int num_pixels;
+            int width;
+            int offset;
+            int stride;
+            int rgba_offset;
+            int rgba_stride;
+        };
+
+        assert(args.count == 9);
+
+        KernelArgs ka;
+        ka.kfilm_convert = get_scalar<KernelFilmConvert>(args.values[0]);
+        ka.rgba = get_pointer<uchar4>(args.values[1]);
+        ka.render_buffer = get_pointer<float>(args.values[2]);
+        ka.num_pixels = get_scalar<int>(args.values[3]);
+        ka.width = get_scalar<int>(args.values[4]);
+        ka.offset = get_scalar<int>(args.values[5]);
+        ka.stride = get_scalar<int>(args.values[6]);
+        ka.rgba_offset = get_scalar<int>(args.values[7]);
+        ka.rgba_stride = get_scalar<int>(args.values[8]);
+        device->m_backend->parallel_invoke("simple_film_convert_combined_half_rgba", dummy_rays, dummy_output, &ka, sizeof(ka));
+        break;
+    }
+    case DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_VOLUME_STACK:{
+        struct KernelArgs{
+            int *path_index_array;
+            int work_size;
+        };
+
+        assert(args.count == 2);
+
+        KernelArgs ka;
+        ka.path_index_array = get_pointer<int>(args.values[0]);
+        ka.work_size = get_scalar<int>(args.values[1]);
+        device->m_backend->parallel_invoke("simple_integrator_intersect_volume_stack", dummy_rays, dummy_output, &ka, sizeof(ka));
+        break;
+    }
+    case DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SHADE_VOLUME:{
+        struct KernelArgs{
+            int *path_index_array;
+            float *render_buffer;
+            int work_size;
+        };
+
+        assert(args.count == 3);
+
+        KernelArgs ka;
+        ka.path_index_array = get_pointer<int>(args.values[0]);
+        ka.render_buffer = get_pointer<float>(args.values[1]);
+        ka.work_size = get_scalar<int>(args.values[2]);
+        device->m_backend->parallel_invoke("simple_integrator_shade_volume", dummy_rays, dummy_output, &ka, sizeof(ka));
+        break;
+    }
     default:
         std::cout << "unknown kernel " << device_kernel_as_string(kernel) << std::endl;
         break;
