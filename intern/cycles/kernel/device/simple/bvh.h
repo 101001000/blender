@@ -53,7 +53,7 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
     isect->v = 0.0f;
     isect->prim = PRIM_NONE;
     isect->object = OBJECT_NONE;
-    isect->type = PRIMITIVE_NONE;
+    isect->type = PRIM_NONE;
 
     prt::Ray prt_ray;
     prt_ray.origin[0] = ray->P.x;
@@ -97,7 +97,7 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
       isect->t = hit.t;
       isect->u = hit.u;
       isect->v = hit.v;
-      isect->prim = off + prim_id;
+      isect->prim = off + prim_id; // Warning
       isect->type = PRIMITIVE_TRIANGLE;
       isect->object = id;
 
@@ -154,6 +154,10 @@ bool anyhit_shader(int prim_, uint object_, uint visibility_, float u, float v, 
   /* Triangle. */
   type = kernel_data_fetch(objects, object).primitive_type;
 
+  if(type != PRIMITIVE_TRIANGLE){
+    return false;
+  }
+
   if (intersection_skip_self_shadow(self, object, prim)) {
     return false;
   }
@@ -176,11 +180,9 @@ bool anyhit_shader(int prim_, uint object_, uint visibility_, float u, float v, 
     return true;
   }
 
-  /* Record transparent intersection. */
+  uint record_index = num_recorded_hits;  // índice con el valor anterior
   num_recorded_hits++;
   num_hits++;
-
-  uint record_index = num_recorded_hits;
 
   const uint max_record_hits = min(max_hits, INTEGRATOR_SHADOW_ISECT_SIZE);
   if (record_index >= max_record_hits) {
