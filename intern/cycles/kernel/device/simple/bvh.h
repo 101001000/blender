@@ -12,6 +12,36 @@ ccl_device_inline bool scene_intersect_valid(const ccl_private Ray *ray)
   return isfinite_safe(ray->P.x) && isfinite_safe(ray->D.x) && len_squared(ray->D) != 0.0f;
 }
 
+bool terminate_ray_visibility(RaySelfPrimitives self, uint object, uint prim, const uint visibility){  
+  #ifdef __VISIBILITY_FLAG__
+    if ((kernel_data_fetch(objects, object).visibility & visibility) == 0) {
+      return false;
+    }
+  #endif
+
+    if (visibility & PATH_RAY_SHADOW_OPAQUE) {
+  #ifdef __SHADOW_LINKING__
+      if (intersection_skip_shadow_link(nullptr, self, object)) {
+        return false;
+      }
+  #endif
+  
+      if (intersection_skip_self_shadow(self, object, prim)) {
+        return false;
+      }
+      else {
+        /* Shadow ray early termination. */
+        return true;
+      }
+    }
+    else {
+      if (intersection_skip_self(self, object, prim)) {
+        return false;
+      }
+    }
+  return true;
+}
+
 ccl_device_intersect bool scene_intersect(KernelGlobals kg,
     const ccl_private Ray *ray,
     const uint visibility,
@@ -25,10 +55,6 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
     isect->object = OBJECT_NONE;
     isect->type = PRIMITIVE_NONE;
 
-    if(!scene_intersect_valid(ray)) {
-        return false;
-    }
-
     prt::Ray prt_ray;
     prt_ray.origin[0] = ray->P.x;
     prt_ray.origin[1] = ray->P.y;
@@ -39,38 +65,47 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
     prt_ray.tmin = ray->tmin;
     prt_ray.tmax = ray->tmax;
 
-    int self_object_size = 0;
-    int self_prim_id = 0;
-    if(ray->self.object != OBJECT_NONE){
-        //self_object_id = kernel_data_fetch(object_ids, ray->self.object);
-        self_object_size = kernel_data_fetch(object_sizes, ray->self.object);
-        self_prim_id = ray->self.prim - kernel_data_fetch(object_prim_offset, ray->self.object);
-    }
-
-
-    prt_ray.self_id = self_object_size + self_prim_id;
-
-    auto hit = prt::closest_hit(prt_ray);
-
-
-    if (!hit.valid) {
+    if(!scene_intersect_valid(ray)) {
         return false;
     }
 
-    //printf("primitive_id: %d\n", hit.primitive_id);
-    const int id = kernel_data_fetch(object_ids, hit.primitive_id);
-    //printf("object id: %d\n", id);
-    const int prim_id = kernel_data_fetch(prim_ids, hit.primitive_id);
-    //printf("prim id: %d\n", prim_id);
-    const int off = kernel_data_fetch(object_prim_offset, id);
-    //printf("offset: %d\n", off);
+    uint id = 0;
+    uint prim_id = 0;
 
-    isect->t = hit.t;
-    isect->u = hit.u;
-    isect->v = hit.v;
-    isect->prim = off + prim_id;
-    isect->type = PRIMITIVE_TRIANGLE;
-    isect->object = id;
+    do{
+          
+      int self_object_size = 0;
+      int self_prim_id = 0;
+      if(ray->self.object != OBJECT_NONE){
+          self_object_size = kernel_data_fetch(object_sizes, ray->self.object);
+          self_prim_id = ray->self.prim - kernel_data_fetch(object_prim_offset, ray->self.object);
+      }
+  
+      prt_ray.self_id = self_object_size + self_prim_id;
+  
+      auto hit = prt::closest_hit(prt_ray);
+  
+      if (!hit.valid) {
+          return false;
+      }
+
+
+      id = kernel_data_fetch(object_ids, hit.primitive_id);
+      prim_id = kernel_data_fetch(prim_ids, hit.primitive_id);
+      const int off = kernel_data_fetch(object_prim_offset, id);
+
+      isect->t = hit.t;
+      isect->u = hit.u;
+      isect->v = hit.v;
+      isect->prim = off + prim_id;
+      isect->type = PRIMITIVE_TRIANGLE;
+      isect->object = id;
+
+      prt_ray.tmin = hit.t;
+      prt_ray.self_id = self_object_size + prim_id;
+
+    }while(!terminate_ray_visibility(ray->self, id, prim_id, visibility));
+
     return true;
     
 }
@@ -97,7 +132,7 @@ ccl_device_intersect bool scene_intersect_volume(KernelGlobals kg,
                                                  ccl_private Intersection *isect,
                                                  const uint visibility)
 {
-    throw std::runtime_error("scene_intersect_volume not implemented");
+    //throw std::runtime_error("scene_intersect_volume not implemented");
     //printf("scene_intersect_volume\n");
     return false;
 }
@@ -199,7 +234,6 @@ ccl_device_intersect bool scene_intersect_shadow_all(KernelGlobals kg,
   if (!scene_intersect_valid(ray_)) {
     return false;
   }
-
   
   Ray ray = *ray_;
   prt::Ray prt_ray;
@@ -217,7 +251,9 @@ ccl_device_intersect bool scene_intersect_shadow_all(KernelGlobals kg,
   if(ray.self.object != OBJECT_NONE){
       //self_object_id = kernel_data_fetch(object_ids, ray->self.object);
       self_object_size = kernel_data_fetch(object_sizes, ray.self.object);
-      self_prim_id = ray.self.prim - kernel_data_fetch(object_prim_offset, ray.self.object);
+      if(ray.self.prim != PRIM_NONE){
+        self_prim_id = ray.self.prim - kernel_data_fetch(object_prim_offset, ray.self.object);
+      }
   }
 
 
@@ -248,10 +284,7 @@ ccl_device_intersect bool scene_intersect_shadow_all(KernelGlobals kg,
     
     // call to the anyhit "shader"
     // two kind of returns: False (ignore ray) or True (terminate ray)
-    int prim_ = prim_id;
-    uint object_ = object_id;
-    RaySelfPrimitives self = ray.self;
-    bool terminate = anyhit_shader(prim_, object_, visibility, hit.u, hit.v, max_hits, *num_recorded_hits, num_hits, state, hit.t, self, clamp_far);
+    bool terminate = anyhit_shader(prim_id, object_id, visibility, hit.u, hit.v, max_hits, *num_recorded_hits, num_hits, state, hit.t, ray.self, clamp_far);
     if(terminate){
       return true;
       break;
