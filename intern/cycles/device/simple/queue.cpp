@@ -511,6 +511,20 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
         device->m_backend->parallel_invoke("simple_shader_eval_curve_shadow_transparency", dummy_rays, dummy_output, &ka, sizeof(ka));
         break;
     }
+    case DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_SUBSURFACE: {
+        struct KernelArgs {
+            int *path_index_array;
+            int work_size;
+        };
+
+        assert(args.count == 2);
+
+        KernelArgs ka;
+        ka.path_index_array = get_pointer<int>(args.values[0]);
+        ka.work_size = get_scalar<int>(args.values[1]);
+        device->m_backend->parallel_invoke("simple_integrator_intersect_subsurface", dummy_rays, dummy_output, &ka, sizeof(ka));
+        break;
+    }
     default:
         std::cout << "unknown kernel " << device_kernel_as_string(kernel) << std::endl;
         break;

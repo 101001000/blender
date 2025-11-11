@@ -931,6 +931,7 @@ static PyObject *get_device_types_func(PyObject * /*self*/, PyObject * /*args*/)
   bool has_metal = false;
   bool has_oneapi = false;
   bool has_hiprt = false;
+  bool has_simple = false;
   for (const DeviceType device_type : device_types) {
     has_cuda |= (device_type == DEVICE_CUDA);
     has_optix |= (device_type == DEVICE_OPTIX);
@@ -938,14 +939,16 @@ static PyObject *get_device_types_func(PyObject * /*self*/, PyObject * /*args*/)
     has_metal |= (device_type == DEVICE_METAL);
     has_oneapi |= (device_type == DEVICE_ONEAPI);
     has_hiprt |= (device_type == DEVICE_HIPRT);
+    has_simple |= (device_type == DEVICE_SIMPLE);
   }
-  PyObject *list = PyTuple_New(6);
+  PyObject *list = PyTuple_New(7);
   PyTuple_SET_ITEM(list, 0, PyBool_FromLong(has_cuda));
   PyTuple_SET_ITEM(list, 1, PyBool_FromLong(has_optix));
   PyTuple_SET_ITEM(list, 2, PyBool_FromLong(has_hip));
   PyTuple_SET_ITEM(list, 3, PyBool_FromLong(has_metal));
   PyTuple_SET_ITEM(list, 4, PyBool_FromLong(has_oneapi));
   PyTuple_SET_ITEM(list, 5, PyBool_FromLong(has_hiprt));
+  PyTuple_SET_ITEM(list, 6, PyBool_FromLong(has_simple));
   return list;
 }
 

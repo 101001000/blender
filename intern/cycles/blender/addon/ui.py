@@ -132,6 +132,8 @@ def use_optix(context):
 def use_oneapi(context):
     return (get_device_type(context) == 'ONEAPI' and use_gpu(context))
 
+def use_simple(context):
+    return (get_device_type(context) == 'SIMPLE' and use_gpu(context))
 
 def use_multi_device(context):
     if use_gpu(context):

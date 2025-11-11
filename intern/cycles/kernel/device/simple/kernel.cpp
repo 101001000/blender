@@ -99,7 +99,13 @@
         throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_BYTE");
       }
       case IMAGE_DATA_TYPE_HALF: {
-        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_HALF");
+        if constexpr (std::is_same_v<T, float4>) {
+          half dat = *reinterpret_cast<const half*>(tex->pixels + idx * channels);
+          return make_float4(dat, dat, dat, dat);
+        } else if constexpr (std::is_same_v<T, float>) {
+          half dat = *reinterpret_cast<const half*>(tex->pixels + idx * channels);
+          return dat;
+        }
       }
       case IMAGE_DATA_TYPE_USHORT4: {
         throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_USHORT4");

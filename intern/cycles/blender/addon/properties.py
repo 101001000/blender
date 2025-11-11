@@ -179,7 +179,8 @@ enum_device_type = (
     ('OPTIX', "OptiX", "OptiX", 3),
     ('HIP', "HIP", "HIP", 4),
     ('METAL', "Metal", "Metal", 5),
-    ('ONEAPI', "oneAPI", "oneAPI", 6)
+    ('ONEAPI', "oneAPI", "oneAPI", 6),
+    ('SIMPLE', "PortableRT", "PortableRT", 7)
 )
 
 enum_texture_limit = (
@@ -1539,7 +1540,7 @@ class CyclesPreferences(bpy.types.AddonPreferences):
 
     def get_device_types(self, context):
         import _cycles
-        has_cuda, has_optix, has_hip, has_metal, has_oneapi, has_hiprt = _cycles.get_device_types()
+        has_cuda, has_optix, has_hip, has_metal, has_oneapi, has_hiprt, has_simple = _cycles.get_device_types()
 
         list = [('NONE', "None", "Don't use compute device", 0)]
         if has_cuda:
@@ -1552,6 +1553,8 @@ class CyclesPreferences(bpy.types.AddonPreferences):
             list.append(('METAL', "Metal", "Use Metal for GPU acceleration", 5))
         if has_oneapi:
             list.append(('ONEAPI', "oneAPI", "Use oneAPI for GPU acceleration", 6))
+        if has_simple:
+            list.append(('SIMPLE', "PortableRT", "Use PortableRT for GPU acceleration", 7))
 
         return list
 
@@ -1626,7 +1629,7 @@ class CyclesPreferences(bpy.types.AddonPreferences):
 
     def update_device_entries(self, device_list):
         for device in device_list:
-            if not device[1] in {'CUDA', 'OPTIX', 'CPU', 'HIP', 'METAL', 'ONEAPI'}:
+            if not device[1] in {'CUDA', 'OPTIX', 'CPU', 'HIP', 'METAL', 'ONEAPI', 'SIMPLE'}:
                 continue
             # Try to find existing Device entry
             entry = self.find_existing_device_entry(device)
@@ -1665,7 +1668,7 @@ class CyclesPreferences(bpy.types.AddonPreferences):
     def refresh_devices(self):
         # Ensure `self.devices` is not re-allocated when the second call to
         # get_devices_for_type is made, freeing items from the first list.
-        for device_type in ('CUDA', 'OPTIX', 'HIP', 'METAL', 'ONEAPI'):
+        for device_type in ('CUDA', 'OPTIX', 'HIP', 'METAL', 'ONEAPI', 'SIMPLE'):
             # Query the device list to trigger all required updates.
             # Note that even though the device list is unused,
             # the function has side-effects with internal state updates.

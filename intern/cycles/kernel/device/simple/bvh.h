@@ -85,7 +85,7 @@ ccl_device_intersect bool scene_intersect_local(KernelGlobals kg,
                                                 ccl_private uint *lcg_state,
                                                 const int max_hits)
 {
-    throw std::runtime_error("scene_intersect_local not implemented");
+    //throw std::runtime_error("scene_intersect_local not implemented");
     //printf("scene_intersect_local\n");
     return false;
 }
