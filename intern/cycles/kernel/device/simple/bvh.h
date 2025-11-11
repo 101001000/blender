@@ -110,6 +110,76 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
     
 }
 
+bool anyhit_local_hit(uint object_, uint local_object_, uint prim_, int max_hits, RaySelfPrimitives self, uint *lcg_state, LocalIntersection *local_isect, float tmax, float u, float v)
+{
+#ifdef __BVH_LOCAL__
+  const int object = object_;
+  if (object != local_object_) {
+    /* Only intersect with matching object. */
+    return false;
+  }
+
+  const int prim = prim_;
+  if (intersection_skip_self_local(self, prim)) {
+    return false;
+  }
+
+  if (max_hits == 0) {
+    /* Special case for when no hit information is requested, just report that something was hit */
+    return true;
+  }
+
+  int hit = 0;
+
+  if (lcg_state) {
+    for (int i = min(max_hits, local_isect->num_hits) - 1; i >= 0; --i) {
+      if (tmax == local_isect->hits[i].t) {
+        return false;
+      }
+    }
+
+    hit = local_isect->num_hits++;
+
+    if (local_isect->num_hits > max_hits) {
+      hit = lcg_step_uint(lcg_state) % local_isect->num_hits;
+      if (hit >= max_hits) {
+        return false;
+      }
+    }
+  }
+  else {
+    if (local_isect->num_hits && tmax > local_isect->hits[0].t) {
+      /* Record closest intersection only.
+       * Do not terminate ray here, since there is no guarantee about distance ordering in any-hit.
+       */
+      return false;
+    }
+
+    local_isect->num_hits = 1;
+  }
+
+  Intersection *isect = &local_isect->hits[hit];
+  isect->t = tmax;
+  isect->prim = prim;
+  isect->object = object;
+  isect->type = kernel_data_fetch(objects, isect->object).primitive_type;
+
+  isect->u = u;
+  isect->v = v;
+
+  /* Record geometric normal. */
+  const packed_uint3 tri_vindex = kernel_data_fetch(tri_vindex, prim);
+  const float3 tri_a = kernel_data_fetch(tri_verts, tri_vindex.x);
+  const float3 tri_b = kernel_data_fetch(tri_verts, tri_vindex.y);
+  const float3 tri_c = kernel_data_fetch(tri_verts, tri_vindex.z);
+
+  local_isect->Ng[hit] = normalize(cross(tri_b - tri_a, tri_c - tri_a));
+
+  /* Continue tracing (without this the trace call would return after the first hit). */
+  return false;
+#endif
+}
+
 
 #ifdef __BVH_LOCAL__
 template<bool single_hit = false>
@@ -120,9 +190,63 @@ ccl_device_intersect bool scene_intersect_local(KernelGlobals kg,
                                                 ccl_private uint *lcg_state,
                                                 const int max_hits)
 {
-    //throw std::runtime_error("scene_intersect_local not implemented");
-    //printf("scene_intersect_local\n");
-    return false;
+
+  if (local_isect) {
+    local_isect->num_hits = 0; /* Initialize hit count to zero. */
+  }
+
+  prt::Ray prt_ray;
+  prt_ray.origin[0] = ray->P.x;
+  prt_ray.origin[1] = ray->P.y;
+  prt_ray.origin[2] = ray->P.z;
+  prt_ray.direction[0] = ray->D.x;
+  prt_ray.direction[1] = ray->D.y;
+  prt_ray.direction[2] = ray->D.z;
+  prt_ray.tmin = ray->tmin;
+  prt_ray.tmax = ray->tmax;
+
+  if(!scene_intersect_valid(ray)) {
+      return false;
+  }
+
+  uint id = 0;
+  uint prim_id = 0;
+  float u;
+  float v;
+  float t;
+
+  do{
+        
+    int self_object_size = 0;
+    int self_prim_id = 0;
+    if(ray->self.object != OBJECT_NONE){
+        self_object_size = kernel_data_fetch(object_sizes, ray->self.object);
+        self_prim_id = ray->self.prim - kernel_data_fetch(object_prim_offset, ray->self.object);
+    }
+
+    prt_ray.self_id = self_object_size + self_prim_id;
+
+    auto hit = prt::closest_hit(prt_ray);
+
+    if (!hit.valid) {
+        return false;
+    }
+
+    u = hit.u;
+    v = hit.v;
+    t = hit.t;
+
+    id = kernel_data_fetch(object_ids, hit.primitive_id);
+    prim_id = kernel_data_fetch(prim_ids, hit.primitive_id);
+    const int off = kernel_data_fetch(object_prim_offset, id);
+
+    prt_ray.tmin = t;
+    prt_ray.self_id = self_object_size + prim_id;
+
+    // anyhit_local_hit(uint object_, uint local_object_, uint prim_, uint max_hits, RaySelfPrimitives self, uint *lcg_state, LocalIntersection *local_isect, float tmax)
+  }while(!anyhit_local_hit(id, local_object, prim_id, max_hits, ray->self, lcg_state, local_isect, t, u, v));
+
+  return true;
 }
 #endif
 
@@ -132,7 +256,7 @@ ccl_device_intersect bool scene_intersect_volume(KernelGlobals kg,
                                                  ccl_private Intersection *isect,
                                                  const uint visibility)
 {
-    //throw std::runtime_error("scene_intersect_volume not implemented");
+    throw std::runtime_error("scene_intersect_volume not implemented");
     //printf("scene_intersect_volume\n");
     return false;
 }
