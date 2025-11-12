@@ -389,10 +389,10 @@ void SimpleDevice::build_bvh(BVH *bvh, Progress &progress, bool refit)
   object_sizes.push_back(0);
 
   for (Object *obj : bvh->objects) {
-
     Geometry* geometry = obj->get_geometry();
     if (!geometry->is_mesh()){
       std::cout << "Dropping non-mesh geometry " << geometry->name << std::endl;
+      object_sizes.push_back(object_sizes.back());
       continue;
     }
     Mesh* mesh = static_cast<Mesh*>(geometry);

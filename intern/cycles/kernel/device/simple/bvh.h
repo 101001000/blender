@@ -110,7 +110,7 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
     
 }
 
-bool anyhit_local_hit(uint object_, uint local_object_, uint prim_, int max_hits, RaySelfPrimitives self, uint *lcg_state, LocalIntersection *local_isect, float tmax, float u, float v)
+bool anyhit_local_hit(uint object_, uint local_object_, uint prim_, int max_hits, RaySelfPrimitives self, uint *lcg_state, LocalIntersection *local_isect, float tmax, float u, float v, bool& out)
 {
 #ifdef __BVH_LOCAL__
   const int object = object_;
@@ -119,6 +119,11 @@ bool anyhit_local_hit(uint object_, uint local_object_, uint prim_, int max_hits
     return false;
   }
 
+  if(kernel_data_fetch(objects, object).primitive_type != PRIMITIVE_TRIANGLE || kernel_data_fetch(objects, local_object_).primitive_type != PRIMITIVE_TRIANGLE){
+    return false;
+  }
+
+
   const int prim = prim_;
   if (intersection_skip_self_local(self, prim)) {
     return false;
@@ -126,6 +131,7 @@ bool anyhit_local_hit(uint object_, uint local_object_, uint prim_, int max_hits
 
   if (max_hits == 0) {
     /* Special case for when no hit information is requested, just report that something was hit */
+    out = true;
     return true;
   }
 
@@ -162,7 +168,7 @@ bool anyhit_local_hit(uint object_, uint local_object_, uint prim_, int max_hits
   isect->t = tmax;
   isect->prim = prim;
   isect->object = object;
-  isect->type = kernel_data_fetch(objects, isect->object).primitive_type;
+  isect->type = PRIMITIVE_TRIANGLE;
 
   isect->u = u;
   isect->v = v;
@@ -190,7 +196,6 @@ ccl_device_intersect bool scene_intersect_local(KernelGlobals kg,
                                                 ccl_private uint *lcg_state,
                                                 const int max_hits)
 {
-
   if (local_isect) {
     local_isect->num_hits = 0; /* Initialize hit count to zero. */
   }
@@ -214,6 +219,7 @@ ccl_device_intersect bool scene_intersect_local(KernelGlobals kg,
   float u;
   float v;
   float t;
+  bool out = false;
 
   do{
         
@@ -223,13 +229,12 @@ ccl_device_intersect bool scene_intersect_local(KernelGlobals kg,
         self_object_size = kernel_data_fetch(object_sizes, ray->self.object);
         self_prim_id = ray->self.prim - kernel_data_fetch(object_prim_offset, ray->self.object);
     }
-
     prt_ray.self_id = self_object_size + self_prim_id;
 
     auto hit = prt::closest_hit(prt_ray);
 
     if (!hit.valid) {
-        return false;
+      break;
     }
 
     u = hit.u;
@@ -238,15 +243,13 @@ ccl_device_intersect bool scene_intersect_local(KernelGlobals kg,
 
     id = kernel_data_fetch(object_ids, hit.primitive_id);
     prim_id = kernel_data_fetch(prim_ids, hit.primitive_id);
-    const int off = kernel_data_fetch(object_prim_offset, id);
 
     prt_ray.tmin = t;
     prt_ray.self_id = self_object_size + prim_id;
 
-    // anyhit_local_hit(uint object_, uint local_object_, uint prim_, uint max_hits, RaySelfPrimitives self, uint *lcg_state, LocalIntersection *local_isect, float tmax)
-  }while(!anyhit_local_hit(id, local_object, prim_id, max_hits, ray->self, lcg_state, local_isect, t, u, v));
+  }while(!anyhit_local_hit(id, local_object, prim_id, max_hits, ray->self, lcg_state, local_isect, t, u, v, out));
 
-  return true;
+  return (max_hits == 0) ? out : (local_isect && local_isect->num_hits > 0);
 }
 #endif
 
