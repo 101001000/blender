@@ -67,6 +67,7 @@ void SimpleDevice::global_free(device_memory &mem)
 
 void SimpleDevice::tex_alloc(device_texture &mem)
 {
+
     auto cmem = generic_alloc(mem);
     if (!cmem) {
       return;
@@ -83,14 +84,12 @@ void SimpleDevice::tex_alloc(device_texture &mem)
       int         wrap_type;
     };
 
-    std::cout << "Allocating " << mem.data_type << std::endl;
-
     CPUTexture2D dev_tex_info;
     dev_tex_info.pixels = reinterpret_cast<const void*>(mem.device_pointer);
     dev_tex_info.width = mem.info.width;
     dev_tex_info.height = mem.info.height;
     dev_tex_info.channels = mem.data_elements;
-    dev_tex_info.data_type = mem.data_type;
+    dev_tex_info.data_type = mem.info.data_type;
     dev_tex_info.wrap_type = mem.info.extension;
     
     

@@ -51,6 +51,9 @@
    return f;
   }
 
+  ccl_device_inline bool valid_unit_float(float v) {
+    return std::isfinite(v) && v >= 0.0f && v <= 1.0f;
+  }
 
   template<typename T>
   ccl_device_forceinline T ccl_gpu_tex_object_read_2D(const ccl_gpu_tex_object_2D texobj,
@@ -81,34 +84,28 @@
         break;
       }
       case IMAGE_DATA_TYPE_HALF4: {
-        const unsigned char* p = reinterpret_cast<const unsigned char*>(tex->pixels) + idx*8; // 4*2 bytes
-        const float g  = p[1] / 255.f;   // byte alto de R (== G == B)
-        const float a  = (p[7] == 255) ? 1.f : p[7] / 255.f; // 0xFFFF -> 1
-        if constexpr (std::is_same_v<T,float>)  return g;
-        if constexpr (std::is_same_v<T,float4>) return make_float4(g, g, g, a);
+        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_HALF4");
         break;
       }
-      case IMAGE_DATA_TYPE_HALF: {
-        const unsigned char* p = reinterpret_cast<const unsigned char*>(tex->pixels) + idx * 2;
 
-        // reconstruye los 16 bits del half (little-endian)
-        const uint16_t hb = uint16_t(p[0]) | (uint16_t(p[1]) << 8);
-      
-        float s = half_to_float_image(half(hb));
-      
-        // fallback para buffers que realmente llevan un uchar en el byte alto
-        if (!std::isfinite(s) || s < 0.0f || s > 1.0f) {
-          s = p[1] / 255.0f;
-        }
-      
-        if constexpr (std::is_same_v<T, float>)  return s;
-        if constexpr (std::is_same_v<T, float4>) return make_float4(s, s, s, 1.0f);
+      case IMAGE_DATA_TYPE_HALF: {
+        throw std::runtime_error("Unsupported type for texture read IMAGE_DATA_TYPE_HALF");
+        break;
+      }
+      case IMAGE_DATA_TYPE_USHORT4:{
+        const ushort4 v = reinterpret_cast<const ushort4*>(tex->pixels)[idx];
+        if constexpr (std::is_same_v<T,float4>) return make_float4(v.x/65535.0f,v.y/65535.0f,v.z/65535.0f,v.w/65535.0f);
+        if constexpr (std::is_same_v<T,float>)  return v.x/65535.0f;
+        break;
+      }
+      case IMAGE_DATA_TYPE_USHORT:{
+        const ushort v = reinterpret_cast<const ushort*>(tex->pixels)[idx];
+        if constexpr (std::is_same_v<T,float4>) return make_float4(v/65535.0f,v/65535.0f,v/65535.0f,v/65535.0f);
+        if constexpr (std::is_same_v<T,float>)  return v/65535.0f;
         break;
       }
       case IMAGE_DATA_TYPE_FLOAT:
       case IMAGE_DATA_TYPE_BYTE:
-      case IMAGE_DATA_TYPE_USHORT4:
-      case IMAGE_DATA_TYPE_USHORT:
       case IMAGE_DATA_TYPE_NANOVDB_FLOAT:
       case IMAGE_DATA_TYPE_NANOVDB_FLOAT3:
       case IMAGE_DATA_TYPE_NANOVDB_FPN:
