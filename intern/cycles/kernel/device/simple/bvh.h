@@ -214,7 +214,7 @@ ccl_device_intersect bool scene_intersect_local(KernelGlobals kg,
       return false;
   }
 
-  uint id = 0;
+  uint object_id = 0;
   uint prim_id = 0;
   float u;
   float v;
@@ -224,12 +224,12 @@ ccl_device_intersect bool scene_intersect_local(KernelGlobals kg,
   do{
         
     int self_object_size = 0;
-    int self_prim_id = 0;
+    int self_local_prim_id = 0;
     if(ray->self.object != OBJECT_NONE){
         self_object_size = kernel_data_fetch(object_sizes, ray->self.object);
-        self_prim_id = ray->self.prim - kernel_data_fetch(object_prim_offset, ray->self.object);
+        self_local_prim_id = ray->self.prim - kernel_data_fetch(object_prim_offset, ray->self.object);
     }
-    prt_ray.self_id = self_object_size + self_prim_id;
+    prt_ray.self_id = self_object_size + self_local_prim_id;
 
     auto hit = prt::closest_hit(prt_ray);
 
@@ -241,13 +241,14 @@ ccl_device_intersect bool scene_intersect_local(KernelGlobals kg,
     v = hit.v;
     t = hit.t;
 
-    id = kernel_data_fetch(object_ids, hit.primitive_id);
-    prim_id = kernel_data_fetch(prim_ids, hit.primitive_id);
+    object_id = kernel_data_fetch(object_ids, hit.primitive_id);
+    prim_id = kernel_data_fetch(prim_ids, hit.primitive_id) + kernel_data_fetch(object_prim_offset, object_id);
+    
 
-    prt_ray.tmin = t;
-    prt_ray.self_id = self_object_size + prim_id;
+    prt_ray.tmin = t + 0.001f;
+    prt_ray.self_id = self_object_size + kernel_data_fetch(prim_ids, hit.primitive_id);
 
-  }while(!anyhit_local_hit(id, local_object, prim_id, max_hits, ray->self, lcg_state, local_isect, t, u, v, out));
+  }while(!anyhit_local_hit(object_id, local_object, prim_id, max_hits, ray->self, lcg_state, local_isect, t, u, v, out));
 
   return (max_hits == 0) ? out : (local_isect && local_isect->num_hits > 0);
 }
