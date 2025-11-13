@@ -17,11 +17,9 @@
 #  define ATTR_FALLTHROUGH
 #endif
 
-#define ccl_gpu_kernel_signature(name, ...) PRT_KERNEL(simple_##name, __VA_ARGS__)
 #define ccl_gpu_kernel_postfix
 #define ccl_gpu_kernel(block_num_threads, thread_num_registers)
-#define ccl_gpu_kernel_threads(block_num_threads) 
-#define ccl_device
+#define ccl_gpu_kernel_threads(block_num_threads)
 #define ccl_gpu_shared
 #define ccl_gpu_block_dim_x 1
 #define ccl_gpu_thread_idx_x 0
@@ -54,8 +52,37 @@
 #define ccl_gpu_kernel_within_bounds(i, n) ((i) < (n))
 #define ccl_optional_struct_init
 #define ccl_device_noinline_cpu ccl_device
-#define __device__
 #define ccl_gpu_global_id_x() global_idx
+#define ccl_device
+
+#ifdef OPTIX_KERNEL 
+  #define OPTIX_DONT_INCLUDE_CUDA
+  #include <optix_device.h>
+  #define ccl_device \
+  static __device__ \
+      __forceinline__  // Function calls are bad for OptiX performance, so inline everything
+  #define ccl_device_extern extern "C" __device__
+  #define ccl_device_inline ccl_device
+  #define ccl_device_forceinline ccl_device
+  #define ccl_device_inline_method __device__ __forceinline__
+  #define ccl_device_noinline static __device__ __noinline__
+  #define ccl_device_noinline_cpu ccl_device
+  #define ccl_global
+  #define ccl_inline_constant static __constant__
+  #define ccl_device_constant __constant__ __device__
+  #define ccl_static_constexpr static constexpr
+  #define ccl_constant const
+  #define ccl_gpu_shared __shared__
+  #define ccl_private
+  #define ccl_ray_data ccl_private
+  #define ccl_may_alias
+  #define ccl_restrict __restrict__
+  #define ccl_align(n) __align__(n)
+#else
+#define __device__
+#endif
+
+#define ccl_gpu_kernel_signature(name, ...) PRT_KERNEL(simple_##name, __VA_ARGS__)
 
 #define ccl_gpu_kernel_lambda(func, ...) \
   struct KernelLambda { \
@@ -92,6 +119,7 @@ ccl_device_inline int clampi(int x, int lo, int hi)
   return (x < lo) ? lo : (x > hi ? hi : x);
 }
 
+#if !defined(OPTIX_KERNEL)
 
 // TODO esto es solo para cpu, mover a su sitio correspondiente.
 // uint32/int: fetch_add/sub devuelven el valor viejo
@@ -134,5 +162,38 @@ static inline float _acas_f32(float* p, float expected, float desired) {
 #define atomic_add_and_fetch_float(ptr, val)  _aafe_f32((ptr), (float)(val))
 #define atomic_compare_and_swap_float(ptr, oldval, newval) _acas_f32((ptr), (float)(oldval), (float)(newval))
 
+#else
+#    define atomic_add_and_fetch_float(p, x) (atomicAdd((float *)(p), (float)(x)) + (float)(x))
+#    define atomic_fetch_and_add_uint32(p, x) atomicAdd((unsigned int *)(p), (unsigned int)(x))
+#    define atomic_fetch_and_sub_uint32(p, x) atomicSub((unsigned int *)(p), (unsigned int)(x))
+ccl_device_inline float atomic_compare_and_swap_float(volatile float *dest,
+                                                      const float old_val,
+                                                      const float new_val)
+{
+  union {
+    unsigned int int_value;
+    float float_value;
+  } new_value, prev_value, result;
+  prev_value.float_value = old_val;
+  new_value.float_value = new_val;
+  result.int_value = atomicCAS((unsigned int *)dest, prev_value.int_value, new_value.int_value);
+  return result.float_value;
+}
 
+typedef unsigned short half;
+
+ccl_device_forceinline half __float2half(const float f)
+{
+  half val;
+  asm("{  cvt.rn.f16.f32 %0, %1;}\n" : "=h"(val) : "f"(f));
+  return val;
+}
+
+ccl_device_forceinline float __half2float(const half h)
+{
+  float val;
+  asm("{  cvt.f32.f16 %0, %1;}\n" : "=f"(val) : "h"(h));
+  return val;
+}
+#endif
 

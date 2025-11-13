@@ -102,7 +102,7 @@ ccl_device_inline float fminf(const float a, const float b)
 #  endif /* _WIN32 */
 #endif   /* __HIP__, __KERNEL_ONEAPI__ */
 
-#if !defined(__KERNEL_GPU__) || defined(__KERNEL_ONEAPI__) || defined(__KERNEL_SIMPLE__)
+#if !defined(__KERNEL_GPU__) || defined(__KERNEL_ONEAPI__) || (defined(__KERNEL_SIMPLE__) && !defined(OPTIX_KERNEL))
 #  ifndef __KERNEL_ONEAPI__
 using std::isfinite;
 using std::isnan;
@@ -775,7 +775,7 @@ ccl_device_inline uint prev_power_of_two(const uint x)
 ccl_device_inline uint32_t reverse_integer_bits(uint32_t x)
 {
   /* Use a native instruction if it exists. */
-#if defined(__KERNEL_CUDA__)
+#if defined(__KERNEL_CUDA__) || (defined(__KERNEL_SIMPLE__) && defined(OPTIX_KERNEL))
   return __brev(x);
 #elif defined(__KERNEL_METAL__)
   return reverse_bits(x);

@@ -35,7 +35,7 @@ ccl_device_inline float half_to_float(half h_in)
 #else
 
 /* CUDA has its own half data type, no need to define then */
-#  if !defined(__KERNEL_CUDA__) && !defined(__KERNEL_HIP__) && !defined(__KERNEL_ONEAPI__)
+#  if !defined(__KERNEL_CUDA__) && !defined(__KERNEL_HIP__) && !defined(__KERNEL_ONEAPI__) && !(defined(__KERNEL_SIMPLE__) && defined(OPTIX_KERNEL))
 /* Implementing this as a class rather than a typedef so that the compiler can tell it apart from
  * unsigned shorts. */
 class half {
@@ -136,7 +136,7 @@ ccl_device_inline half float_to_half_display(const float f)
 {
 #if defined(__KERNEL_METAL__) || defined(__KERNEL_ONEAPI__)
   return half(min(f, 65504.0f));
-#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__)
+#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__) || (defined(OPTIX_KERNEL) && defined(__KERNEL_SIMPLE__))
   return __float2half(min(f, 65504.0f));
 #else
   const int x = __float_as_int((f > 0.0f) ? ((f < 65504.0f) ? f : 65504.0f) : 0.0f);

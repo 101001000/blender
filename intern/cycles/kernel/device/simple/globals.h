@@ -40,8 +40,9 @@ ccl_device_inline const T &kernel_data_fetch_dbg_ref(const char *nm,
                                                     void     *base2)
 {
   if(i == static_cast<size_t>(-1)){
-    throw std::runtime_error("Invalid index");
-    return base[1];
+    //throw std::runtime_error("Invalid index");
+    printf("Invalid index %s %p %d\n", nm, base, i);
+    return base[0];
   }
   //printf("kernel_data_fetch_dbg_ref %s %p %d\n", nm, base, i);
   T res = base[i];

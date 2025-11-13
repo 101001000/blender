@@ -12,7 +12,7 @@ ccl_device_inline bool scene_intersect_valid(const ccl_private Ray *ray)
   return isfinite_safe(ray->P.x) && isfinite_safe(ray->D.x) && len_squared(ray->D) != 0.0f;
 }
 
-bool terminate_ray_visibility(RaySelfPrimitives self, uint object, uint prim, const uint visibility){  
+ccl_device_inline bool terminate_ray_visibility(RaySelfPrimitives self, uint object, uint prim, const uint visibility){  
   #ifdef __VISIBILITY_FLAG__
     if ((kernel_data_fetch(objects, object).visibility & visibility) == 0) {
       return false;
@@ -110,7 +110,7 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
     
 }
 
-bool anyhit_local_hit(uint object_, uint local_object_, uint prim_, int max_hits, RaySelfPrimitives self, uint *lcg_state, LocalIntersection *local_isect, float tmax, float u, float v, bool& out)
+ccl_device_inline bool anyhit_local_hit(uint object_, uint local_object_, uint prim_, int max_hits, RaySelfPrimitives self, uint *lcg_state, LocalIntersection *local_isect, float tmax, float u, float v, bool& out)
 {
 #ifdef __BVH_LOCAL__
   const int object = object_;
@@ -260,13 +260,13 @@ ccl_device_intersect bool scene_intersect_volume(KernelGlobals kg,
                                                  ccl_private Intersection *isect,
                                                  const uint visibility)
 {
-    throw std::runtime_error("scene_intersect_volume not implemented");
+    //throw std::runtime_error("scene_intersect_volume not implemented");
     //printf("scene_intersect_volume\n");
     return false;
 }
 #endif
 
-bool anyhit_shader(int prim_, uint object_, uint visibility_, float u, float v, uint max_hits, uint& num_recorded_hits, uint& num_hits, IntegratorShadowState state, float tmax, RaySelfPrimitives self, bool& clamp_far)
+ccl_device_inline bool anyhit_shader(int prim_, uint object_, uint visibility_, float u, float v, uint max_hits, uint& num_recorded_hits, uint& num_hits, IntegratorShadowState state, float tmax, RaySelfPrimitives self, bool& clamp_far)
 {
 #ifdef __SHADOW_RECORD_ALL__
   int prim = prim_;

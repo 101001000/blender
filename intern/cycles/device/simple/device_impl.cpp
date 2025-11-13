@@ -23,7 +23,7 @@ SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profi
     std::cout << "select backend: ";
     int idx;
     //std::cin >> idx;
-    idx = 0;
+    idx = 1;
     prt::select_backend(prt::available_backends()[idx]);
     m_backend = prt::selected_backend;
     std::cout << "selected backend: " << prt::selected_backend->name() << std::endl;
