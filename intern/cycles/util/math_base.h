@@ -651,7 +651,7 @@ ccl_device float bits_to_01(const uint bits)
   return bits * (1.0f / (float)0xFFFFFFFF);
 }
 
-#if !defined(__KERNEL_GPU__) || defined(__KERNEL_SIMPLE__)
+#if !defined(__KERNEL_GPU__) || (defined(__KERNEL_SIMPLE__) && !defined(SYCL_KERNEL) && !defined(OPTIX_KERNEL))
 #  if defined(__GNUC__)
 ccl_device_inline uint popcount(const uint x)
 {
@@ -668,7 +668,7 @@ ccl_device_inline uint popcount(const uint x)
   return i;
 }
 #  endif
-#elif defined(__KERNEL_ONEAPI__)
+#elif defined(__KERNEL_ONEAPI__) || defined(SYCL_KERNEL)
 #  define popcount(x) sycl::popcount(x)
 #elif defined(__KERNEL_HIP__)
 /* Use popcll to support 64-bit wave for pre-RDNA AMD GPUs */
@@ -679,14 +679,24 @@ ccl_device_inline uint popcount(const uint x)
 
 ccl_device_inline uint count_leading_zeros(const uint x)
 {
-#if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__) || defined(__KERNEL_HIP__)
+#if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__) || defined(__KERNEL_HIP__) || defined(OPTIX_KERNEL)
   return __clz(x);
 #elif defined(__KERNEL_METAL__)
   return clz(x);
 #elif defined(__KERNEL_ONEAPI__)
   return sycl::clz(x);
 #else
-  assert(x != 0);
+  uint v = x;
+  if (v == 0u) {
+    return 32u;
+  }
+  uint n = 0u;
+  if ((v & 0xFFFF0000u) == 0u) { n += 16u; v <<= 16; }
+  if ((v & 0xFF000000u) == 0u) { n += 8u;  v <<= 8;  }
+  if ((v & 0xF0000000u) == 0u) { n += 4u;  v <<= 4;  }
+  if ((v & 0xC0000000u) == 0u) { n += 2u;  v <<= 2;  }
+  if ((v & 0x80000000u) == 0u) { n += 1u; }
+  return n;
 #  ifdef _MSC_VER
   unsigned long leading_zero = 0;
   _BitScanReverse(&leading_zero, x);

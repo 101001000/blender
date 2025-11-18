@@ -72,8 +72,9 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
 
     debug_enqueue_begin(kernel, work_size); 
 
-    std::vector<prt::Ray> dummy_rays(work_size);
-    std::vector<unsigned char> dummy_output(work_size);
+    //std::vector<prt::Ray> dummy_rays(work_size);
+    std::size_t dummy_rays = work_size; // TODO: cleanup
+    std::vector<unsigned char> dummy_output(0);
 
     switch(kernel) {
 

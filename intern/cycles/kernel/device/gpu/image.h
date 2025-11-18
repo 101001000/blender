@@ -291,7 +291,6 @@ ccl_device float4 kernel_tex_image_interp(KernelGlobals kg, const int id, const 
 
     return make_float4(f, f, f, 1.0f);
   }
-  printf("Exit\n");
 }
 
 ccl_device float4 kernel_tex_image_interp_3d(KernelGlobals kg,
