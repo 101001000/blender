@@ -88,8 +88,24 @@ __device__
 #  else
                                           IsActiveOp is_active_op)
 {
-#ifdef __KERNEL_SIMPLE__
+#ifdef __KERNEL_SIMPLE__ // TODO: This is not efficient.
+  // Id global de este "state".
   int* warp_offset = get_global_value(int*, warp_offset);
+  const uint state_index1 = (uint)ccl_gpu_global_id_x();
+
+  if (state_index1 >= num_states) {
+    return;
+  }
+
+  const uint is_active1 = is_active_op(state_index1) ? 1u : 0u;
+  if (!is_active1) {
+    return;
+  }
+
+  // Reservamos una posición en el array de índices.
+  uint dst = atomic_fetch_and_add_uint32((uint *)num_indices, 1u);
+  indices[dst] = (int)state_index1;
+  return;
 #else
   extern ccl_gpu_shared int warp_offset[];
 #endif

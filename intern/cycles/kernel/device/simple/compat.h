@@ -17,6 +17,32 @@
 #  define ATTR_FALLTHROUGH
 #endif
 
+#define ccl_device
+#define ccl_device_extern extern "C"
+#define ccl_global
+#define ccl_always_inline __attribute__((always_inline))
+#define ccl_device_inline inline
+#define ccl_noinline __attribute__((noinline))
+#define ccl_inline_constant const constexpr
+#define ccl_device_constant static constexpr
+#define ccl_static_constexpr static constexpr
+#define ccl_device_forceinline __attribute__((always_inline))
+#define ccl_device_noinline ccl_device ccl_noinline
+#define ccl_device_noinline_cpu ccl_device
+#define ccl_device_inline_method ccl_device
+#define ccl_restrict __restrict__
+#define ccl_optional_struct_init
+#define ccl_private
+#define ccl_ray_data ccl_private
+#define ccl_gpu_shared
+#define ATTR_FALLTHROUGH __attribute__((fallthrough))
+#define ccl_constant const
+#define ccl_try_align(...) __attribute__((aligned(__VA_ARGS__)))
+#define ccl_align(n) __attribute__((aligned(n)))
+#define kernel_assert(cond)
+#define ccl_may_alias
+
+
 #define ccl_gpu_kernel_postfix
 #define ccl_gpu_kernel(block_num_threads, thread_num_registers)
 #define ccl_gpu_kernel_threads(block_num_threads)
@@ -25,11 +51,20 @@
 #define ccl_gpu_thread_idx_x 0
 #define ccl_gpu_warp_size 1
 #define ccl_gpu_block_idx_x global_idx
+
+#ifdef SYCL_KERNEL
+#define ccl_gpu_syncthreads() sycl::ext::oneapi::this_work_item::get_nd_item<1>().barrier()
+#else 
 #define ccl_gpu_syncthreads void
+#endif
+
 #define ccl_gpu_ballot(predicate) (predicate ? 1 : 0)
+
 #define ccl_gpu_kernel_call(x) x
+
 #define ccl_gpu_thread_mask(thread_warp) \
     ((thread_warp) >= 1 ? 1 : 0)  // Máscara para 1 hilo
+
 #define ccl_gpu_global_id_x() (ccl_gpu_block_idx_x * ccl_gpu_block_dim_x + \
   ccl_gpu_thread_idx_x)
 #define kernel_data kernel_globals.__data
@@ -52,8 +87,8 @@
 #define ccl_gpu_kernel_within_bounds(i, n) ((i) < (n))
 #define ccl_optional_struct_init
 #define ccl_device_noinline_cpu ccl_device
-#define ccl_gpu_global_id_x() global_idx
-#define ccl_device
+
+
 
 #ifdef OPTIX_KERNEL 
   #define OPTIX_DONT_INCLUDE_CUDA
@@ -119,7 +154,7 @@ ccl_device_inline int clampi(int x, int lo, int hi)
   return (x < lo) ? lo : (x > hi ? hi : x);
 }
 
-#if !defined(OPTIX_KERNEL)
+#if defined(CPU_KERNEL)
 
 // TODO esto es solo para cpu, mover a su sitio correspondiente.
 // uint32/int: fetch_add/sub devuelven el valor viejo
@@ -162,7 +197,7 @@ static inline float _acas_f32(float* p, float expected, float desired) {
 #define atomic_add_and_fetch_float(ptr, val)  _aafe_f32((ptr), (float)(val))
 #define atomic_compare_and_swap_float(ptr, oldval, newval) _acas_f32((ptr), (float)(oldval), (float)(newval))
 
-#else
+#elif defined(OPTIX_KERNEL)
 #    define atomic_add_and_fetch_float(p, x) (atomicAdd((float *)(p), (float)(x)) + (float)(x))
 #    define atomic_fetch_and_add_uint32(p, x) atomicAdd((unsigned int *)(p), (unsigned int)(x))
 #    define atomic_fetch_and_sub_uint32(p, x) atomicSub((unsigned int *)(p), (unsigned int)(x))

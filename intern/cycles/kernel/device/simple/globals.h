@@ -10,6 +10,10 @@
 #include "util/color.h"
 #include "util/texture.h"
 
+#ifdef SYCL_KERNEL
+#include <sycl/sycl.hpp>
+#endif
+
 CCL_NAMESPACE_BEGIN
 
 struct IntegratorStateGPU;
@@ -42,6 +46,9 @@ ccl_device_inline const T &kernel_data_fetch_dbg_ref(const char *nm,
   if(i == static_cast<size_t>(-1)){
     //throw std::runtime_error("Invalid index");
     //printf("Invalid index %s %p %d\n", nm, base, i);
+    #ifdef SYCL_KERNEL
+    sycl::ext::oneapi::experimental::printf("Invalid index access for %s\n", nm);
+    #endif
     return base[0];
   }
   //printf("kernel_data_fetch_dbg_ref %s %p %d\n", nm, base, i);

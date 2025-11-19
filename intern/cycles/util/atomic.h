@@ -21,7 +21,7 @@
 
 #else /* __KERNEL_GPU__ */
 
-#  ifndef __KERNEL_ONEAPI__
+#  if  !defined(__KERNEL_ONEAPI__)
 #    define atomic_fetch_and_add_uint32_shared atomic_fetch_and_add_uint32
 #  endif
 
@@ -172,7 +172,7 @@ ccl_device_inline float atomic_compare_and_swap_float(volatile ccl_global float 
 
 #  endif /* __KERNEL_METAL__ */
 
-#  ifdef __KERNEL_ONEAPI__
+#  if defined(__KERNEL_ONEAPI__) || defined(SYCL_KERNEL)
 
 ccl_device_inline float atomic_add_and_fetch_float(ccl_global float *p, const float x)
 {
@@ -217,7 +217,7 @@ ccl_device_inline int atomic_fetch_and_add_uint32(ccl_global int *p, const int x
       atomic(*p);
   return atomic.fetch_add(x);
 }
-
+#ifndef SYCL_KERNEL
 ccl_device_inline int atomic_fetch_and_add_uint32_shared(int *p, const int x)
 {
   sycl::atomic_ref<int,
@@ -227,7 +227,7 @@ ccl_device_inline int atomic_fetch_and_add_uint32_shared(int *p, const int x)
       atomic(*p);
   return atomic.fetch_add(x);
 }
-
+#endif
 ccl_device_inline unsigned int atomic_fetch_and_sub_uint32(ccl_global unsigned int *p,
                                                            unsigned int x)
 {
@@ -289,7 +289,7 @@ ccl_device_inline int atomic_fetch_and_or_uint32(ccl_global int *p, const int x)
       atomic(*p);
   return atomic.fetch_or(x);
 }
-
+#ifndef SYCL_KERNEL
 ccl_device_inline void atomic_store_local(int *p, const int x)
 {
   sycl::atomic_ref<int,
@@ -309,7 +309,7 @@ ccl_device_inline int atomic_load_local(int *p)
       atomic(*p);
   return atomic.load();
 }
-
+#endif
 #  endif /* __KERNEL_ONEAPI__ */
 
 #endif /* __KERNEL_GPU__ */
