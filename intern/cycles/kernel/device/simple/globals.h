@@ -45,7 +45,10 @@ ccl_device_inline const T &kernel_data_fetch_dbg_ref(const char *nm,
 {
   if(i == static_cast<size_t>(-1)){
     //throw std::runtime_error("Invalid index");
-    //printf("Invalid index %s %p %d\n", nm, base, i);
+    //
+    #ifdef HIP_KERNEL
+      printf("Invalid index %s %p %d\n", nm, base, i);
+    #endif
     #ifdef SYCL_KERNEL
     sycl::ext::oneapi::experimental::printf("Invalid index access for %s\n", nm);
     #endif

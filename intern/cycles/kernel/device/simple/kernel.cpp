@@ -12,7 +12,7 @@
 #pragma GCC diagnostic ignored "-Wreorder"
 
 // TODO: Limpiar esto
-#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(OPTIX_KERNEL)
+#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(OPTIX_KERNEL) || defined(HIP_KERNEL)
   #include "kernel/device/simple/compat.h"
   #include "util/half.h"
   #include "util/types.h"

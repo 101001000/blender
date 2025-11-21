@@ -17,6 +17,11 @@
 #  define ATTR_FALLTHROUGH
 #endif
 
+#ifdef HIP_KERNEL
+#  include "hip/hip_fp16.h"
+#  include "hip/hip_runtime.h"
+#endif
+
 #define ccl_device
 #define ccl_device_extern extern "C"
 #define ccl_global
@@ -113,6 +118,26 @@
   #define ccl_may_alias
   #define ccl_restrict __restrict__
   #define ccl_align(n) __align__(n)
+#elif defined(HIP_KERNEL)
+  #define ccl_device __device__ __inline__
+  #define ccl_device_extern extern "C" __device__
+  #define ccl_device_inline __device__ __inline__
+  #define ccl_device_forceinline __device__ __forceinline__
+  #define ccl_device_noinline __device__ __noinline__
+  #define ccl_device_noinline_cpu ccl_device
+  #define ccl_device_inline_method ccl_device
+  #define ccl_global
+  #define ccl_inline_constant __constant__
+  #define ccl_device_constant __constant__ __device__
+  #define ccl_static_constexpr static constexpr
+  #define ccl_constant const
+  #define ccl_gpu_shared __shared__
+  #define ccl_private
+  #define ccl_ray_data ccl_private
+  #define ccl_may_alias
+  #define ccl_restrict __restrict__
+  #define ccl_align(n) __align__(n)
+  #define ccl_optional_struct_init
 #else
 #define __device__
 #endif

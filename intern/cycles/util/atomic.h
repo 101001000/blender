@@ -25,7 +25,7 @@
 #    define atomic_fetch_and_add_uint32_shared atomic_fetch_and_add_uint32
 #  endif
 
-#  if defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__)
+#  if defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__) || (defined(__KERNEL_SIMPLE__) && defined(HIP_KERNEL))
 
 #    define atomic_add_and_fetch_float(p, x) (atomicAdd((float *)(p), (float)(x)) + (float)(x))
 

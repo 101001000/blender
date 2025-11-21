@@ -101,7 +101,7 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
       isect->type = PRIMITIVE_TRIANGLE;
       isect->object = id;
 
-      prt_ray.tmin = hit.t;
+      prt_ray.tmin = hit.t + 0.001f;
       prt_ray.self_id = self_object_size + prim_id;
 
     }while(!terminate_ray_visibility(ray->self, id, prim_id, visibility));
@@ -401,7 +401,7 @@ ccl_device_intersect bool scene_intersect_shadow_all(KernelGlobals kg,
       self_object_size = kernel_data_fetch(object_sizes, self_object_id);
       self_prim_id = hit.primitive_id - kernel_data_fetch(object_prim_offset, self_object_id);
       prt_ray.self_id = self_object_size + self_prim_id;
-      prt_ray.tmin = hit.t;
+      prt_ray.tmin = hit.t + 0.001f;
     } else {
       break;
     }

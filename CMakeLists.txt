@@ -11,13 +11,16 @@
 
 
 set(PRT_EXTRA_KERNELS simple_integrator_init_from_camera simple_integrator_reset simple_integrator_intersect_closest simple_prefix_sum simple_integrator_sorted_paths_array simple_integrator_shade_surface simple_integrator_shade_background simple_integrator_queued_paths_array simple_integrator_compact_paths_array simple_integrator_terminated_paths_array simple_integrator_compact_states simple_adaptive_sampling_convergence_check simple_integrator_intersect_shadow simple_integrator_shade_shadow simple_integrator_queued_shadow_paths_array simple_integrator_terminated_shadow_paths_array simple_integrator_compact_shadow_paths_array simple_integrator_compact_shadow_states simple_integrator_shade_light simple_shader_eval_curve_shadow_transparency simple_shader_eval_background simple_integrator_intersect_subsurface simple_film_convert_combined_half_rgba simple_integrator_intersect_volume_stack simple_integrator_shade_volume)
+#set(PRT_EXTRA_KERNELS simple_integrator_init_from_camera simple_integrator_reset simple_integrator_intersect_closest)
 #set(KA_USE_OPTIX ON)
 #set(OptiX_ROOT /homelocal/encalle_local/Downloads/NVIDIA-OptiX-SDK-7.5.0-linux64-x86_64)
-set(KA_USE_SYCL ON)
-set(DPCPP_ROOT /home/quique/Desktop/linux-sycl-6.1.0)
+#set(KA_USE_SYCL ON)
+#set(DPCPP_ROOT /home/quique/Desktop/linux-sycl-6.1.0)
 #set(DPCPP_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/dpc++6.1.0)
 #set(KA_USE_EMBREE_CPU ON)
 #set(embree_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/cmake/embree)
+set(KA_USE_ROCM ON)
+set(ROCM_ROOT /opt/rocm)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   if(NOT DEFINED WITH_IN_SOURCE_BUILD)

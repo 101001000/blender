@@ -15,41 +15,20 @@ CCL_NAMESPACE_BEGIN
 SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profiler, bool headless) : GPUDevice(info, stats, profiler, headless), object_ids_mem(this, "object_ids", MEM_GLOBAL), prim_ids_mem(this, "prim_ids", MEM_GLOBAL), object_sizes_mem(this, "object_sizes", MEM_GLOBAL) {
 
     prt::kernelapi_init({{"kernel_globals", sizeof(KernelParamsSimple)}, {"warp_offset", sizeof(int*)}});
-
-    std::cout << "available backends: " << std::endl;
-    for (int i = 0; i < prt::available_backends().size(); i++) {
-        std::cout << i << ": " << prt::available_backends()[i]->name() << " - " << prt::available_backends()[i]->device_name() << " " << std::endl;
-    }
-    std::cout << "select backend: ";
-    int idx;
+    int idx = -1;
+    std::cout << "backend overwrite" << std::endl;
     std::cin >> idx;
-    //idx = 1;
-    prt::select_backend(prt::available_backends()[idx]);
+    if(idx > -1){
+      prt::select_backend(prt::available_backends()[idx]);
+    }else{
+      prt::select_backend(prt::available_backends()[info.num]);
+    }
     m_backend = prt::selected_backend;
     std::cout << "selected backend: " << prt::selected_backend->name() << std::endl;
     m_backend->global_alloc("kernel_globals", sizeof(KernelParamsSimple));
     m_backend->global_alloc("warp_offset", sizeof(int*));
     void* warp_offset = m_backend->device_malloc(sizeof(int) * (1024 + 1));
     m_backend->global_copy_to("warp_offset", &warp_offset, sizeof(int*));
-
-    
-    
-    /*
-    std::cout << "showing all kernels:" << std::endl;
-    for (auto [name, fn] : prt::kernels_) {
-        //std::cout << "Listing kernel " << name << std::endl;
-    }
-
-    for (auto [data, size] : prt::embeded_kernels_) {
-        //std::cout << "Listing embeded kernel " << size << std::endl;
-    }
-
-    std::cout << "test" << std::endl;
-
-    for (auto [name, size] : prt::global_vars_) {
-        std::cout << "Listing global " << name << " of size " << size << std::endl;
-    }*/
-
 }
 
 SimpleDevice::~SimpleDevice() {
