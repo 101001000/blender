@@ -179,7 +179,7 @@ ccl_device_inline int clampi(int x, int lo, int hi)
   return (x < lo) ? lo : (x > hi ? hi : x);
 }
 
-#if defined(CPU_KERNEL)
+#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL)
 
 // TODO esto es solo para cpu, mover a su sitio correspondiente.
 // uint32/int: fetch_add/sub devuelven el valor viejo

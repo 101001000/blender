@@ -16,7 +16,10 @@ SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profi
 
     prt::kernelapi_init({{"kernel_globals", sizeof(KernelParamsSimple)}, {"warp_offset", sizeof(int*)}});
     int idx = -1;
-    std::cout << "backend overwrite" << std::endl;
+    std::cout << "available backends: " << std::endl;
+    for(int i = 0; i < prt::available_backends().size(); i++){
+      std::cout << i << ": " << prt::available_backends()[i]->name() << std::endl;
+    }
     std::cin >> idx;
     if(idx > -1){
       prt::select_backend(prt::available_backends()[idx]);
