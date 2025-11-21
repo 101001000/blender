@@ -15,10 +15,10 @@ set(PRT_EXTRA_KERNELS simple_integrator_init_from_camera simple_integrator_reset
 #set(KA_USE_OPTIX ON)
 #set(OptiX_ROOT /homelocal/encalle_local/Downloads/NVIDIA-OptiX-SDK-7.5.0-linux64-x86_64)
 #set(KA_USE_SYCL ON)
-#set(DPCPP_ROOT /home/quique/Desktop/linux-sycl-6.1.0)
+set(DPCPP_ROOT /home/quique/Desktop/linux-sycl-6.1.0)
 #set(DPCPP_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/dpc++6.1.0)
-set(KA_USE_EMBREE_CPU ON)
-set(embree_DIR /home/quique/Desktop/embree-sycl/)
+set(KA_USE_EMBREE_SYCL ON)
+set(embree_ROOT /home/quique/Desktop/embree-sycl/)
 #set(KA_USE_ROCM ON)
 #set(ROCM_ROOT /opt/rocm)
 

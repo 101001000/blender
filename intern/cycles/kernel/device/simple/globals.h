@@ -10,7 +10,7 @@
 #include "util/color.h"
 #include "util/texture.h"
 
-#ifdef SYCL_KERNEL
+#if defined(SYCL_KERNEL) || defined(EMBREE_SYCL_KERNEL)
 #include <sycl/sycl.hpp>
 #endif
 

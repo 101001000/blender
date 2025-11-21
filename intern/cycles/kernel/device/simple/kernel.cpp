@@ -12,7 +12,7 @@
 #pragma GCC diagnostic ignored "-Wreorder"
 
 // TODO: Limpiar esto
-#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(OPTIX_KERNEL) || defined(HIP_KERNEL)
+#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(OPTIX_KERNEL) || defined(HIP_KERNEL) || defined(EMBREE_SYCL_KERNEL)
   #include "kernel/device/simple/compat.h"
   #include "util/half.h"
   #include "util/types.h"
@@ -126,7 +126,7 @@
 #endif
 
 
-#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(HIP_KERNEL) || defined(OPTIX_KERNEL)
+#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(HIP_KERNEL) || defined(OPTIX_KERNEL) || defined(EMBREE_SYCL_KERNEL)
 #include "kernel/device/simple/config.h"
 #include "kernel/device/simple/globals.h"
 #endif
@@ -136,7 +136,7 @@
 #include <portableRT/portableRT.hpp>
 
 
-#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(HIP_KERNEL) || defined(OPTIX_KERNEL)
+#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(HIP_KERNEL) || defined(OPTIX_KERNEL) || defined(EMBREE_SYCL_KERNEL)
 #include "kernel/device/gpu/image.h"
 #include "kernel/device/gpu/kernel.h"
 #endif

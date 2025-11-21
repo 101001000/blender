@@ -57,7 +57,7 @@
 #define ccl_gpu_warp_size 1
 #define ccl_gpu_block_idx_x global_idx
 
-#ifdef SYCL_KERNEL
+#if defined(SYCL_KERNEL) || defined(EMBREE_SYCL_KERNEL) 
 #define ccl_gpu_syncthreads() sycl::ext::oneapi::this_work_item::get_nd_item<1>().barrier()
 #else 
 #define ccl_gpu_syncthreads void
