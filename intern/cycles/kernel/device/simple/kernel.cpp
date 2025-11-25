@@ -10,6 +10,8 @@
 #pragma GCC diagnostic ignored "-Wshadow"
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #pragma GCC diagnostic ignored "-Wreorder"
+#pragma GCC diagnostic ignored "-Wmacro-redefined"
+#pragma GCC diagnostic ignored "-Warray-bounds"
 
 // TODO: Limpiar esto
 #if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(OPTIX_KERNEL) || defined(HIP_KERNEL) || defined(EMBREE_SYCL_KERNEL)

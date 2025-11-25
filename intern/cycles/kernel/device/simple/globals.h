@@ -50,7 +50,7 @@ ccl_device_inline const T &kernel_data_fetch_dbg_ref(const char *nm,
       printf("Invalid index %s %p %d\n", nm, base, i);
     #endif
     #ifdef SYCL_KERNEL
-    sycl::ext::oneapi::experimental::printf("Invalid index access for %s\n", nm);
+    //sycl::ext::oneapi::experimental::printf("Invalid index access for %s\n", nm);
     #endif
     return base[0];
   }
