@@ -1,14 +1,42 @@
+#include <cstdlib> 
+
 #include "device/simple/queue.h"
 #include "device/simple/device_impl.h"
 
 CCL_NAMESPACE_BEGIN
 
 
-SimpleDeviceQueue::SimpleDeviceQueue(SimpleDevice *device) : DeviceQueue(device), device(device) {}
+SimpleDeviceQueue::SimpleDeviceQueue(SimpleDevice *device) : DeviceQueue(device), device(device) {
+
+
+    m_concurrent_states = 1048576;
+    m_concurrent_busy_states = 64;
+
+    if (const char* env = std::getenv("CYCLES_CONCURRENT_STATES")) {
+        char* end = nullptr;
+        unsigned long v = std::strtoul(env, &end, 10);
+
+        if (end != env && *end == '\0' && v > 0) {
+            m_concurrent_states = static_cast<size_t>(v);
+        }
+    }
+    
+    if (const char* env = std::getenv("CYCLES_CONCURRENT_BUSY_STATES")) {
+        char* end = nullptr;
+        unsigned long v = std::strtoul(env, &end, 10);
+
+        if (end != env && *end == '\0' && v > 0) {
+            m_concurrent_busy_states = static_cast<size_t>(v);
+        }
+    }
+
+    std::cout << "CYCLES_CONCURRENT_STATES: " << m_concurrent_states << "\n";
+    std::cout << "CYCLES_CONCURRENT_BUSY_STATES: " << m_concurrent_busy_states << "\n";
+}
 SimpleDeviceQueue::~SimpleDeviceQueue() {}
 
-int SimpleDeviceQueue::num_concurrent_states(const size_t state_size) const { return 1048576; }
-int SimpleDeviceQueue::num_concurrent_busy_states(const size_t state_size) const { return 64; }
+int SimpleDeviceQueue::num_concurrent_states(const size_t state_size) const { return m_concurrent_states; }
+int SimpleDeviceQueue::num_concurrent_busy_states(const size_t state_size) const { return m_concurrent_busy_states; }
 void SimpleDeviceQueue::init_execution() {
     debug_init_execution();
     device->load_texture_info();
@@ -38,6 +66,8 @@ std::string type_to_string(DeviceKernelArguments::Type type) {
 
 // Lee los primeros 8 valores de lookup_table, y después el 21759 y el 21760.
 void read_lookup(SimpleDevice *device){
+    static std::mutex invoke_mutex;
+	//std::lock_guard<std::mutex> lock(invoke_mutex);
     char *kg_ptr = (char*)device->m_backend->get_global_ptr("kernel_globals");
   
     uintptr_t d_lookup_addr = 0;
@@ -69,9 +99,17 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
     //std::cout << "Enqueueing kernel " << kernel << " with work size " << work_size << " and args size " << args.count << std::endl;
 
     //read_lookup(this->device);
+    //std::lock_guard<std::mutex> lock(device->prt_mutex);
+
+    auto start = std::chrono::high_resolution_clock::now();
 
     debug_enqueue_begin(kernel, work_size); 
 
+    if(device_kernel_has_intersection(kernel)){
+        device->m_backend->m_generic_kernel = false;
+    } else {
+        device->m_backend->m_generic_kernel = true;
+    }
     //std::vector<prt::Ray> dummy_rays(work_size);
     std::size_t dummy_rays = work_size; // TODO: cleanup
     std::vector<unsigned char> dummy_output(0);
@@ -587,6 +625,15 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
     default:
         std::cout << "unknown kernel " << device_kernel_as_string(kernel) << std::endl;
         break;
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    if( device->kernel_times.find(device_kernel_as_string(kernel)) == device->kernel_times.end() ) {
+        device->kernel_times[device_kernel_as_string(kernel)] = duration;
+    } else {
+        device->kernel_times[device_kernel_as_string(kernel)] += duration;
     }
 
     debug_enqueue_end();

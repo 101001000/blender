@@ -140,7 +140,7 @@ ccl_device_inline int4 make_int4(const float3 f)
 
 #if defined(__KERNEL_METAL__)
 /* Metal has native packed_float3. */
-#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__) || defined(__KERNEL_ONEAPI__) || (defined(__KERNEL_SIMPLE__) && defined(OPTIX_KERNEL)) || (defined(__KERNEL_SIMPLE__) && defined(HIP_KERNEL))
+#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__) || defined(__KERNEL_ONEAPI__) || (defined(__KERNEL_SIMPLE__) && defined(OPTIX_KERNEL)) || (defined(__KERNEL_SIMPLE__) && defined(HIP_KERNEL)) || (defined(__KERNEL_SIMPLE__) && defined(CUDA_KERNEL))
 /* CUDA, HIP and oneAPI float3 are already packed. */
 using packed_float3 = float3;
 #else

@@ -47,13 +47,30 @@ bool OptiXDeviceQueue::enqueue(DeviceKernel kernel,
   const bool use_osl = false;
 #  endif
 
+
+  auto start = std::chrono::high_resolution_clock::now();
+
   if (!is_optix_specific_kernel(kernel, use_osl)) {
-    return CUDADeviceQueue::enqueue(kernel, work_size, args);
+    bool res = CUDADeviceQueue::enqueue(kernel, work_size, args);
+
+    synchronize();
+    
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    if( device->kernel_times.find(device_kernel_as_string(kernel)) == device->kernel_times.end() ) {
+        device->kernel_times[device_kernel_as_string(kernel)] = duration;
+    } else {
+        device->kernel_times[device_kernel_as_string(kernel)] += duration;
+    }
+
+    return res;
   }
 
   if (cuda_device_->have_error()) {
     return false;
   }
+
 
   debug_enqueue_begin(kernel, work_size);
 
@@ -195,6 +212,20 @@ bool OptiXDeviceQueue::enqueue(DeviceKernel kernel,
                                   work_size,
                                   1,
                                   1));
+
+
+  
+  synchronize();
+                                  
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    if( device->kernel_times.find(device_kernel_as_string(kernel)) == device->kernel_times.end() ) {
+        device->kernel_times[device_kernel_as_string(kernel)] = duration;
+    } else {
+        device->kernel_times[device_kernel_as_string(kernel)] += duration;
+    }
+
 
   debug_enqueue_end();
 

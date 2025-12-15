@@ -22,6 +22,9 @@
 #include "util/unique_ptr.h"
 #include "util/vector.h"
 
+#include <map>
+#include <chrono>
+
 CCL_NAMESPACE_BEGIN
 
 class BVH;
@@ -161,6 +164,7 @@ class Device {
  public:
   /* noexcept needed to silence TBB warning. */
   virtual ~Device() noexcept(false);
+  std::map<std::string, std::chrono::duration<double>> kernel_times;
 
   /* info */
   DeviceInfo info;
@@ -180,6 +184,7 @@ class Device {
     fprintf(stderr, "%s\n", error.c_str());
     fflush(stderr);
   }
+  void print_times() const;
   virtual BVHLayoutMask get_bvh_layout_mask(const uint kernel_features) const = 0;
 
   /* statistics */

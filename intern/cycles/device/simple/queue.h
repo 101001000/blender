@@ -1,5 +1,6 @@
 #include "device/queue.h"
 
+
 CCL_NAMESPACE_BEGIN
 
 class SimpleDevice;
@@ -20,6 +21,8 @@ public:
     bool supports_local_atomic_sort() const override;
     
 private:
+    std::size_t m_concurrent_states;
+    std::size_t m_concurrent_busy_states;
     SimpleDevice *device;
 };
 

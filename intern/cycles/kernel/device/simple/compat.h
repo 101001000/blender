@@ -22,7 +22,7 @@
 #  include "hip/hip_runtime.h"
 #endif
 
-#define ccl_device
+#define ccl_device inline
 #define ccl_device_extern extern "C"
 #define ccl_global
 #define ccl_always_inline __attribute__((always_inline))
@@ -95,7 +95,7 @@
 
 
 
-#ifdef OPTIX_KERNEL 
+#if defined(OPTIX_KERNEL) || defined(CUDA_KERNEL) 
   #define OPTIX_DONT_INCLUDE_CUDA
   #include <optix_device.h>
   #define ccl_device \
@@ -112,7 +112,6 @@
   #define ccl_device_constant __constant__ __device__
   #define ccl_static_constexpr static constexpr
   #define ccl_constant const
-  #define ccl_gpu_shared __shared__
   #define ccl_private
   #define ccl_ray_data ccl_private
   #define ccl_may_alias
@@ -131,13 +130,16 @@
   #define ccl_device_constant __constant__ __device__
   #define ccl_static_constexpr static constexpr
   #define ccl_constant const
-  #define ccl_gpu_shared __shared__
   #define ccl_private
   #define ccl_ray_data ccl_private
   #define ccl_may_alias
   #define ccl_restrict __restrict__
   #define ccl_align(n) __align__(n)
-  #define ccl_optional_struct_init
+  //#define ccl_gpu_syncthreads() __syncthreads()
+  //#define ccl_gpu_warp_size (warpSize)
+  //#define ccl_gpu_thread_mask(thread_warp) uint64_t((1ull << thread_warp) - 1)
+  //#define ccl_gpu_syncthreads() __syncthreads()
+  //#define ccl_gpu_ballot(predicate) __ballot(predicate)
 #else
 #define __device__
 #endif
@@ -222,7 +224,7 @@ static inline float _acas_f32(float* p, float expected, float desired) {
 #define atomic_add_and_fetch_float(ptr, val)  _aafe_f32((ptr), (float)(val))
 #define atomic_compare_and_swap_float(ptr, oldval, newval) _acas_f32((ptr), (float)(oldval), (float)(newval))
 
-#elif defined(OPTIX_KERNEL)
+#elif defined(OPTIX_KERNEL) || defined(CUDA_KERNEL)
 #    define atomic_add_and_fetch_float(p, x) (atomicAdd((float *)(p), (float)(x)) + (float)(x))
 #    define atomic_fetch_and_add_uint32(p, x) atomicAdd((unsigned int *)(p), (unsigned int)(x))
 #    define atomic_fetch_and_sub_uint32(p, x) atomicSub((unsigned int *)(p), (unsigned int)(x))

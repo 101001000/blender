@@ -9,18 +9,28 @@
 #include "scene/mesh.h"
 #include <dlfcn.h>
 #include <cinttypes>
+#include <atomic>
+#include <iostream>
+#include <thread>
+
 
 CCL_NAMESPACE_BEGIN
 
+
 SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profiler, bool headless) : GPUDevice(info, stats, profiler, headless), object_ids_mem(this, "object_ids", MEM_GLOBAL), prim_ids_mem(this, "prim_ids", MEM_GLOBAL), object_sizes_mem(this, "object_sizes", MEM_GLOBAL) {
 
-    prt::kernelapi_init({{"kernel_globals", sizeof(KernelParamsSimple)}, {"warp_offset", sizeof(int*)}});
+    prt::kernelapi_init({{"kernel_globals", sizeof(KernelParamsSimple)}});
     int idx = -1;
     std::cout << "available backends: " << std::endl;
     for(int i = 0; i < prt::available_backends().size(); i++){
       std::cout << i << ": " << prt::available_backends()[i]->name() << std::endl;
     }
-    std::cin >> idx;
+    if(prt::available_backends().size() > 1){
+      std::cin >> idx;
+    } else {
+      idx = 0;
+    }
+
     if(idx > -1){
       prt::select_backend(prt::available_backends()[idx]);
     }else{
@@ -28,10 +38,24 @@ SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profi
     }
     m_backend = prt::selected_backend;
     std::cout << "selected backend: " << prt::selected_backend->name() << std::endl;
+    std::cout << "selected device: " << prt::selected_backend->device_name() << std::endl;
     m_backend->global_alloc("kernel_globals", sizeof(KernelParamsSimple));
-    m_backend->global_alloc("warp_offset", sizeof(int*));
-    void* warp_offset = m_backend->device_malloc(sizeof(int) * (1024 + 1));
-    m_backend->global_copy_to("warp_offset", &warp_offset, sizeof(int*));
+
+    unsigned int block_size = 1;
+
+    if (const char* env = std::getenv("PRT_BLOCKSIZE")) {
+        char* end = nullptr;
+        unsigned long v = std::strtoul(env, &end, 10);
+
+        if (end != env && *end == '\0' && v > 0) {
+            block_size = static_cast<unsigned int>(v);
+        }
+    }
+
+    m_backend->set_ka_blocksize(block_size);
+
+    printf("SIZEOF host KernelParamsSimple %d\n", sizeof(KernelParamsSimple));
+    printf("BLOCKSIZE %d\n", block_size);
 }
 
 SimpleDevice::~SimpleDevice() {
@@ -41,6 +65,7 @@ SimpleDevice::~SimpleDevice() {
 
 void SimpleDevice::global_free(device_memory &mem)
 {
+  std::lock_guard<std::mutex> lock(prt_mutex);
   //check
   if (mem.is_resident(this) && mem.device_pointer) {
     generic_free(mem);
@@ -50,9 +75,14 @@ void SimpleDevice::global_free(device_memory &mem)
 void SimpleDevice::tex_alloc(device_texture &mem)
 {
 
+    std::lock_guard<std::mutex> lock(prt_mutex);
     auto cmem = generic_alloc(mem);
     if (!cmem) {
       return;
+    }
+
+    if (mem.data_depth > 1) {
+      std::cout << "Warning, 3D texture not supported" << std::endl;
     }
 
     m_backend->device_copy_to((void*)mem.device_pointer, mem.host_pointer, mem.memory_size());
@@ -87,21 +117,35 @@ void SimpleDevice::tex_alloc(device_texture &mem)
         texture_info.resize(slot + 128);
       }
       texture_info[slot] = mem.info;
-      need_texture_info = true;                     // fuerza re-subida al device
+      need_texture_info = true;                    
     }
 }
 
 
 void SimpleDevice::tex_free(device_texture &mem)
 {
-  generic_free(mem);
-  //throw std::runtime_error("Texture deallocation not supported");
+    std::lock_guard<std::mutex> lock(prt_mutex); 
+    {
+      thread_scoped_lock tlock(texture_info_mutex);
+      if (mem.slot < texture_info.size()) {
+        texture_info[mem.slot] = TextureInfo();
+      }
+    }
+
+    if (mem.info.data != 0) {
+      void *tex_info_ptr = reinterpret_cast<void*>(mem.info.data);
+      m_backend->device_free(tex_info_ptr);
+      mem.info.data = 0;
+    }
+
+    generic_free(mem);
 }
 
 
 BVHLayoutMask SimpleDevice::get_bvh_layout_mask(const uint kernel_features) const {return BVH_LAYOUT_SIMPLE;}
 void SimpleDevice::const_copy_to(const char *name, void *host_ptr, const size_t size)
 {
+  std::lock_guard<std::mutex> lock(prt_mutex); 
     //std::cout << "const_copy_to " << name << " of size " << size << std::endl;
     char *kg_ptr = (char *)m_backend->get_global_ptr("kernel_globals");
 
@@ -125,6 +169,7 @@ void SimpleDevice::const_copy_to(const char *name, void *host_ptr, const size_t 
 
 void SimpleDevice::global_alloc(device_memory &mem)
 {
+  //std::lock_guard<std::mutex> lock(prt_mutex);
   //check
   if (mem.is_resident(this)) {
     generic_alloc(mem);
@@ -147,30 +192,10 @@ void SimpleDevice::mem_alloc(device_memory &mem){
   }
 }
 
-void print_mem(SimpleDevice *device, device_memory &mem){
-  int max_it = 8;
-  std::cout << "printing mem " << mem.name << " (" << mem.memory_size() << " bytes)" << std::endl;
-  std::cout << "host:" << std::endl;
-  for(int i = 0; i < mem.memory_size(); ++i){
-      std::cout << "byte " << i << ": " << (int)((char*)mem.host_pointer)[i] << std::endl;
-      if(i > max_it){
-          break;
-      }
-  }
-  std::cout << "device:" << std::endl;
-  void* host_ptr = malloc(mem.memory_size());
-  device->m_backend->device_copy_from(host_ptr, (void*)mem.device_pointer, mem.memory_size());
-  for(int i = 0; i < mem.memory_size(); ++i){
-      std::cout << "byte " << i << ": " << (int)((char*)host_ptr)[i] << std::endl;
-      if(i > max_it){
-          break;
-      }
-  }
-}
-
 
 void SimpleDevice::global_copy_to(device_memory &mem)
 {
+  //std::lock_guard<std::mutex> lock(prt_mutex);
   //check
   std::cout << "global_copy_to " << mem.name << "of size " << mem.memory_size() << std::endl;
   if (!mem.device_pointer) {
@@ -237,7 +262,7 @@ void SimpleDevice::tex_copy_to(device_texture &mem){
 
 void SimpleDevice::mem_move_to_host(device_memory &mem){
   //check
-  //  std::cout << "mem_move_to_host " << mem.name << std::endl;
+ //std::cout << "mem_move_to_host " << mem.name << std::endl;
  if (mem.type == MEM_GLOBAL) {
     global_free(mem);
     global_alloc(mem);
@@ -297,17 +322,6 @@ void SimpleDevice::mem_copy_from(device_memory &mem, const size_t y, size_t w, c
     else {
       memset((char *)mem.host_pointer + offset, 0, size);
     }
-
-    //std::cout << "trayendo de vuelta " << mem.name << " size " << size << " offset " << offset << " elem " << elem << " w " << w << " h " << h << " y " << y << std::endl;
-
-    for(int i = 0; i < mem.memory_size(); ++i){
-        //std::cout << "host byte " << i << " = " << (int)(((char*)mem.host_pointer)[i]) << std::endl;
-    }
-    //std::cout << std::endl;
-    for(int i = 0; i < mem.memory_size(); ++i){
-        //std::cout << "device byte " << i << " = " << (int)(((char*)mem.device_pointer)[i]) << std::endl;
-    }
-    //std::cout << std::endl;
   }
 }
 void SimpleDevice::get_device_memory_info(size_t &total, size_t &free){
@@ -322,13 +336,13 @@ void SimpleDevice::get_device_memory_info(size_t &total, size_t &free){
 
 
 bool SimpleDevice::alloc_device(void *&device_pointer, const size_t size){
-    //check
+    //std::lock_guard<std::mutex> lock(prt_mutex);
     device_pointer = m_backend->device_malloc(size);
     //std::cout << "Allocated ptr of " << size << " bytes at " << device_pointer << std::endl;
     return device_pointer != nullptr;
 }
 void SimpleDevice::free_device(void *device_pointer){
-    //check
+    //std::lock_guard<std::mutex> lock(prt_mutex);
     if(device_pointer){
         m_backend->device_free(device_pointer);
     }
@@ -348,6 +362,7 @@ void *SimpleDevice::shared_to_device_pointer(const void *shared_pointer){
 }
 void SimpleDevice::copy_host_to_device(void *device_pointer, void *host_pointer, const size_t size){
   //check
+  //std::lock_guard<std::mutex> lock(prt_mutex);
     m_backend->device_copy_to(device_pointer, host_pointer, size);
 }
 device_ptr SimpleDevice::mem_alloc_sub_ptr(device_memory &mem, const size_t offset, size_t /*size*/)

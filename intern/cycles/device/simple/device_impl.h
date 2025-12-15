@@ -1,6 +1,9 @@
 #include "device/device.h"
 #include "kernel/device/simple/globals.h"
 #include <portableRT/portableRT.hpp>
+#include <chrono>
+#include <map>
+
 CCL_NAMESPACE_BEGIN
 
 class SimpleDevice : public GPUDevice {
@@ -39,7 +42,9 @@ public:
     device_vector<int> object_sizes_mem;
     device_vector<int> prim_ids_mem;
 
-    prt::Backend* m_backend;
+    std::mutex prt_mutex;
+
+    prt::Backend* m_backend;    
 
 };
 

@@ -14,7 +14,7 @@
 #pragma GCC diagnostic ignored "-Warray-bounds"
 
 // TODO: Limpiar esto
-#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(OPTIX_KERNEL) || defined(HIP_KERNEL) || defined(EMBREE_SYCL_KERNEL)
+#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(OPTIX_KERNEL) || defined(CUDA_KERNEL) || defined(HIP_KERNEL) || defined(EMBREE_SYCL_KERNEL)
   #include "kernel/device/simple/compat.h"
   #include "util/half.h"
   #include "util/types.h"
@@ -46,14 +46,21 @@
   ccl_device_forceinline T ccl_gpu_tex_object_read_2D(const ccl_gpu_tex_object_2D texobj,
                                                       float fx, float fy)
   {
-    int a;
     const CPUTexture2D* tex = reinterpret_cast<const CPUTexture2D*>(texobj);
   
     const float cfx = clamp_mode(fx, tex->wrap_type);
     const float cfy = clamp_mode(fy, tex->wrap_type);
   
-    const int ix = static_cast<int>(cfx * tex->width);
-    const int iy = static_cast<int>(cfy * tex->height);
+    int ix = static_cast<int>(cfx * tex->width);
+    int iy = static_cast<int>(cfy * tex->height);
+
+    if(ix < 0 || ix >= tex->width || iy < 0 || iy >= tex->height){
+      //printf("Out of bounds access %f %f %f %f %d %d\n", (double)fx, (double)fy, (double)cfx, (double)cfy, ix, iy);
+    }
+
+    ix = ix < 0 ? 0 : (ix >= tex->width  ? tex->width  - 1 : ix);
+    iy = iy < 0 ? 0 : (iy >= tex->height ? tex->height - 1 : iy);
+
     const int channels = tex->channels;
     const int data_type = tex->data_type;
     const size_t idx = ((size_t)iy * tex->width + ix);
@@ -128,17 +135,17 @@
 #endif
 
 
-#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(HIP_KERNEL) || defined(OPTIX_KERNEL) || defined(EMBREE_SYCL_KERNEL)
+#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(HIP_KERNEL) || defined(OPTIX_KERNEL)  || defined(CUDA_KERNEL) || defined(EMBREE_SYCL_KERNEL)
 #include "kernel/device/simple/config.h"
 #include "kernel/device/simple/globals.h"
 #endif
 
-#define PRT_GLOBALS PRT_GVAR(kernel_globals, KernelParamsSimple) PRT_GVAR(warp_offset, int*)
+#define PRT_GLOBALS PRT_GVAR(kernel_globals, KernelParamsSimple) 
 
 #include <portableRT/portableRT.hpp>
 
 
-#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(HIP_KERNEL) || defined(OPTIX_KERNEL) || defined(EMBREE_SYCL_KERNEL)
+#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(HIP_KERNEL) || defined(OPTIX_KERNEL)  || defined(CUDA_KERNEL) || defined(EMBREE_SYCL_KERNEL)
 #include "kernel/device/gpu/image.h"
 #include "kernel/device/gpu/kernel.h"
 #endif

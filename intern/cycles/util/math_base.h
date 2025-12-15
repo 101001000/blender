@@ -102,7 +102,7 @@ ccl_device_inline float fminf(const float a, const float b)
 #  endif /* _WIN32 */
 #endif   /* __HIP__, __KERNEL_ONEAPI__ */
 
-#if !defined(__KERNEL_GPU__) || defined(__KERNEL_ONEAPI__) || (defined(__KERNEL_SIMPLE__) && !defined(OPTIX_KERNEL) && !defined(HIP_KERNEL))
+#if !defined(__KERNEL_GPU__) || defined(__KERNEL_ONEAPI__) || (defined(__KERNEL_SIMPLE__) && !defined(OPTIX_KERNEL) && !defined(HIP_KERNEL) && !defined(CUDA_KERNEL))
 #  ifndef __KERNEL_ONEAPI__
 using std::isfinite;
 using std::isnan;
@@ -651,7 +651,7 @@ ccl_device float bits_to_01(const uint bits)
   return bits * (1.0f / (float)0xFFFFFFFF);
 }
 
-#if !defined(__KERNEL_GPU__) || (defined(__KERNEL_SIMPLE__) && !defined(SYCL_KERNEL) && !defined(OPTIX_KERNEL) && !defined(HIP_KERNEL))
+#if !defined(__KERNEL_GPU__) || (defined(__KERNEL_SIMPLE__) && !defined(SYCL_KERNEL) && !defined(OPTIX_KERNEL) && !defined(HIP_KERNEL)  && !defined(CUDA_KERNEL))
 #  if defined(__GNUC__)
 ccl_device_inline uint popcount(const uint x)
 {
@@ -679,7 +679,7 @@ ccl_device_inline uint popcount(const uint x)
 
 ccl_device_inline uint count_leading_zeros(const uint x)
 {
-#if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__) || defined(__KERNEL_HIP__) || defined(OPTIX_KERNEL) || defined(HIP_KERNEL)
+#if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__) || defined(__KERNEL_HIP__) || defined(OPTIX_KERNEL) || defined(HIP_KERNEL)  || defined(CUDA_KERNEL)
   return __clz(x);
 #elif defined(__KERNEL_METAL__)
   return clz(x);
@@ -785,7 +785,7 @@ ccl_device_inline uint prev_power_of_two(const uint x)
 ccl_device_inline uint32_t reverse_integer_bits(uint32_t x)
 {
   /* Use a native instruction if it exists. */
-#if defined(__KERNEL_CUDA__) || (defined(__KERNEL_SIMPLE__) && defined(OPTIX_KERNEL))
+#if defined(__KERNEL_CUDA__) || (defined(__KERNEL_SIMPLE__) && defined(OPTIX_KERNEL)) ||  (defined(__KERNEL_SIMPLE__) && defined(CUDA_KERNEL))
   return __brev(x);
 #elif defined(__KERNEL_METAL__)
   return reverse_bits(x);

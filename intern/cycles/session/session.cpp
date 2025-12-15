@@ -226,6 +226,10 @@ void Session::run_main_render_loop()
       break;
     }
   }
+
+  std::cout << "Printing times" << std::endl;
+  device->print_times();
+
 }
 
 void Session::thread_run()

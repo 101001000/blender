@@ -330,6 +330,13 @@ vector<DeviceInfo> Device::available_devices(const uint mask)
   return devices;
 }
 
+void Device::print_times() const
+{
+  for(auto it = kernel_times.begin(); it != kernel_times.end(); it++){
+    std::cout << it->first << ": " << it->second.count() << "\n";
+  }
+}
+
 DeviceInfo Device::dummy_device(const string &error_msg)
 {
   DeviceInfo info;
