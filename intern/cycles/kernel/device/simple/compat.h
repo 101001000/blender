@@ -95,12 +95,12 @@
 
 
 
-#if defined(OPTIX_KERNEL) || defined(CUDA_KERNEL) 
+#if defined(OPTIX_KERNEL)
   #define OPTIX_DONT_INCLUDE_CUDA
   #include <optix_device.h>
   #define ccl_device \
-  static __device__ \
-      __forceinline__  // Function calls are bad for OptiX performance, so inline everything
+    static __device__ \
+        __forceinline__  // Function calls are bad for OptiX performance, so inline everything
   #define ccl_device_extern extern "C" __device__
   #define ccl_device_inline ccl_device
   #define ccl_device_forceinline ccl_device
@@ -112,11 +112,39 @@
   #define ccl_device_constant __constant__ __device__
   #define ccl_static_constexpr static constexpr
   #define ccl_constant const
+  #define ccl_gpu_shared __shared__
   #define ccl_private
   #define ccl_ray_data ccl_private
   #define ccl_may_alias
   #define ccl_restrict __restrict__
   #define ccl_align(n) __align__(n)
+  #define ccl_gpu_syncthreads()
+#elif defined(CUDA_KERNEL)
+  #define ccl_device __device__ __inline__
+  #define ccl_device_extern extern "C" __device__
+  #if __CUDA_ARCH__ < 500
+  #  define ccl_device_inline __device__ __forceinline__
+  #  define ccl_device_forceinline __device__ __forceinline__
+  #else
+  #  define ccl_device_inline __device__ __inline__
+  #  define ccl_device_forceinline __device__ __forceinline__
+  #endif
+  #define ccl_device_noinline __device__ __noinline__
+  #define ccl_device_noinline_cpu ccl_device
+  #define ccl_device_inline_method ccl_device
+  #define ccl_global
+  #define ccl_inline_constant __constant__
+  #define ccl_device_constant __constant__ __device__
+  #define ccl_static_constexpr static constexpr
+  #define ccl_constant const
+  #define ccl_gpu_shared __shared__
+  #define ccl_private
+  #define ccl_ray_data ccl_private
+  #define ccl_may_alias
+  #define ccl_restrict __restrict__
+  #define ccl_align(n) __align__(n)
+  #define ccl_optional_struct_init
+  #define ccl_gpu_syncthreads() __syncthreads()
 #elif defined(HIP_KERNEL)
   #define ccl_device __device__ __inline__
   #define ccl_device_extern extern "C" __device__

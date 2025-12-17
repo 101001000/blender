@@ -476,7 +476,7 @@ ccl_device_inline int bsdf_label(const KernelGlobals kg,
   return label;
 }
 
-#ifndef __KERNEL_CUDA__
+#if !defined(__KERNEL_CUDA__) && !defined(CUDA_KERNEL) && !defined(OPTIX_KERNEL)
 ccl_device
 #else
 ccl_device_inline

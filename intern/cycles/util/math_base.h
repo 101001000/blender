@@ -385,7 +385,7 @@ ccl_device_inline float smoothstep(const float edge0, const float edge1, const f
 
 #endif /* !defined(__KERNEL_METAL__) */
 
-#if defined(__KERNEL_CUDA__)
+#if defined(__KERNEL_CUDA__) && defined(CUDA_KERNEL) && defined(OPTIX_KERNEL)
 ccl_device_inline float saturatef(const float a)
 {
   return __saturatef(a);
