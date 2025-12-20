@@ -115,22 +115,7 @@
   ccl_device_forceinline T ccl_gpu_tex_object_read_3D(const ccl_gpu_tex_object_3D texobj,
                                                       const float fx, const float fy, const float fz)
   {
-    //throw std::runtime_error("Unsupported type for texture 3D read");
-    //std::cout << "reading 3D text "  << std::endl;
-    const CPUTexture3D &tex = *texobj;
-
-    const float u = fx * tex.width  - 0.5f;
-    const float v = fy * tex.height - 0.5f;
-    const float w = fz * tex.depth  - 0.5f;
-
-    const int ix = clampi(int(std::floor(u + 0.5f)), 0, tex.width  - 1);
-    const int iy = clampi(int(std::floor(v + 0.5f)), 0, tex.height - 1);
-    const int iz = clampi(int(std::floor(w + 0.5f)), 0, tex.depth  - 1);
-
-    const size_t idx = ((size_t)iz * tex.height + iy) * tex.width + ix;
-    const T *ptr = reinterpret_cast<const T *>(tex.voxels);
-
-    return ptr[idx];
+    return T();
   }
 #endif
 

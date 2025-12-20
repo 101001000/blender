@@ -52,10 +52,10 @@
 #define ccl_gpu_kernel(block_num_threads, thread_num_registers)
 #define ccl_gpu_kernel_threads(block_num_threads)
 #define ccl_gpu_shared
-#define ccl_gpu_block_dim_x 1
-#define ccl_gpu_thread_idx_x 0
+#define ccl_gpu_block_dim_x local_dim
+#define ccl_gpu_thread_idx_x local_idx
 #define ccl_gpu_warp_size 1
-#define ccl_gpu_block_idx_x global_idx
+#define ccl_gpu_block_idx_x global_idx / local_dim
 
 #if defined(SYCL_KERNEL) || defined(EMBREE_SYCL_KERNEL) 
 #define ccl_gpu_syncthreads() sycl::ext::oneapi::this_work_item::get_nd_item<1>().barrier()
@@ -117,6 +117,15 @@
   #define ccl_may_alias
   #define ccl_restrict __restrict__
   #define ccl_align(n) __align__(n)
+  #define ccl_gpu_syncthreads() __syncthreads()
+
+  #define cosf(x) __cosf(((float)(x)))
+  #define sinf(x) __sinf(((float)(x)))
+  #define powf(x, y) __powf(((float)(x)), ((float)(y)))
+  #define tanf(x) __tanf(((float)(x)))
+  #define logf(x) __logf(((float)(x)))
+  #define expf(x) __expf(((float)(x)))
+
 #elif defined(HIP_KERNEL)
   #define ccl_device __device__ __inline__
   #define ccl_device_extern extern "C" __device__
@@ -135,7 +144,7 @@
   #define ccl_may_alias
   #define ccl_restrict __restrict__
   #define ccl_align(n) __align__(n)
-  //#define ccl_gpu_syncthreads() __syncthreads()
+  #define ccl_gpu_syncthreads() __syncthreads()
   //#define ccl_gpu_warp_size (warpSize)
   //#define ccl_gpu_thread_mask(thread_warp) uint64_t((1ull << thread_warp) - 1)
   //#define ccl_gpu_syncthreads() __syncthreads()
