@@ -25,7 +25,7 @@
 #    define atomic_fetch_and_add_uint32_shared atomic_fetch_and_add_uint32
 #  endif
 
-#  if defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__) || (defined(__KERNEL_SIMPLE__) && defined(HIP_KERNEL))
+#  if defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__) || (defined(__KERNEL_SIMPLE__) && defined(HIP_KERNEL)) || defined(OPTIX_KERNEL) || defined(CUDA_KERNEL)
 
 #    define atomic_add_and_fetch_float(p, x) (atomicAdd((float *)(p), (float)(x)) + (float)(x))
 
@@ -35,7 +35,7 @@
 #    define atomic_fetch_and_dec_uint32(p) atomic_fetch_and_sub_uint32((p), 1)
 #    define atomic_fetch_and_or_uint32(p, x) atomicOr((unsigned int *)(p), (unsigned int)(x))
 
-ccl_device_inline float atomic_compare_and_swap_float(volatile float *dest,
+__device__ __forceinline__ float atomic_compare_and_swap_float(volatile float *dest,
                                                       const float old_val,
                                                       const float new_val)
 {

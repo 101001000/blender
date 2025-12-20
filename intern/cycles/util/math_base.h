@@ -709,7 +709,7 @@ ccl_device_inline uint count_leading_zeros(const uint x)
 
 ccl_device_inline uint count_trailing_zeros(const uint x)
 {
-#if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__) || defined(__KERNEL_HIP__)
+#if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__) || defined(__KERNEL_HIP__) || defined(OPTIX_KERNEL) || defined(HIP_KERNEL) || defined(CUDA_KERNEL)
   return (__ffs(x) - 1);
 #elif defined(__KERNEL_METAL__)
   return ctz(x);
