@@ -27,8 +27,23 @@ bool HIPRTDeviceQueue::enqueue(DeviceKernel kernel,
     return false;
   }
 
+    auto start = std::chrono::high_resolution_clock::now();
+
   if (!device_kernel_has_intersection(kernel)) {
-    return HIPDeviceQueue::enqueue(kernel, work_size, args);
+
+    bool res = HIPDeviceQueue::enqueue(kernel, work_size, args);
+    synchronize();
+    
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    if( device->kernel_times.find(device_kernel_as_string(kernel)) == device->kernel_times.end() ) {
+        device->kernel_times[device_kernel_as_string(kernel)] = duration;
+    } else {
+        device->kernel_times[device_kernel_as_string(kernel)] += duration;
+    }
+
+    return res;
   }
 
   debug_enqueue_begin(kernel, work_size);
@@ -73,6 +88,18 @@ bool HIPRTDeviceQueue::enqueue(DeviceKernel kernel,
                                        const_cast<void **>(args_copy.values),
                                        nullptr),
                  "enqueue");
+  
+  synchronize();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    if( device->kernel_times.find(device_kernel_as_string(kernel)) == device->kernel_times.end() ) {
+        device->kernel_times[device_kernel_as_string(kernel)] = duration;
+    } else {
+        device->kernel_times[device_kernel_as_string(kernel)] += duration;
+    }
+
 
   debug_enqueue_end();
 

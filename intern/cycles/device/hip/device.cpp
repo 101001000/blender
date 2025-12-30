@@ -82,9 +82,14 @@ unique_ptr<Device> device_hip_create(const DeviceInfo &info,
                                      Profiler &profiler,
                                      const bool headless)
 {
+  std::cout << "creating hip device" << std::endl;
 #ifdef WITH_HIPRT
+  std::cout << "creating hip device with hardware ray tracing" << std::endl;
   if (info.use_hardware_raytracing) {
+    std::cout << "and is on" << std::endl;
     return make_unique<HIPRTDevice>(info, stats, profiler, headless);
+  }else {
+    std::cout << "and is off" << std::endl;
   }
   return make_unique<HIPDevice>(info, stats, profiler, headless);
 #elif defined(WITH_HIP)
@@ -142,8 +147,11 @@ void device_hip_info(vector<DeviceInfo> &devices)
   }
 
 #  ifdef WITH_HIPRT
+  std::cout << "hiprtewInit" << std::endl;
   const bool has_hardware_raytracing = hiprtewInit();
+  std::cout << "has_hardware_raytracing: " << has_hardware_raytracing << std::endl;
 #  else
+  std::cout << "not WITH_HIPRT" << std::endl;
   const bool has_hardware_raytracing = false;
 #  endif
 
@@ -194,6 +202,8 @@ void device_hip_info(vector<DeviceInfo> &devices)
     /* Disable on RDNA1 due to bug rendering curves in HIP-RT 2.5 or HIP SDK 6.3. */
     info.use_hardware_raytracing = has_hardware_raytracing && is_rdna2_or_newer;
 
+    std::cout << "is_rdna2_or_newer" << is_rdna2_or_newer << std::endl;
+
     int pci_location[3] = {0, 0, 0};
     hipDeviceGetAttribute(&pci_location[0], hipDeviceAttributePciDomainID, num);
     hipDeviceGetAttribute(&pci_location[1], hipDeviceAttributePciBusId, num);
@@ -235,6 +245,7 @@ void device_hip_info(vector<DeviceInfo> &devices)
     }
 
     VLOG_INFO << "Added device \"" << info.description << "\" with id \"" << info.id << "\".";
+    std::cout << "finally" << info.use_hardware_raytracing << std::endl;
 
     if (info.denoisers & DENOISER_OPENIMAGEDENOISE) {
       VLOG_INFO << "Device with id \"" << info.id << "\" supports "

@@ -53,9 +53,10 @@ static void adjust_device_info_from_preferences(DeviceInfo &info, PointerRNA cpr
   if (info.type == DEVICE_ONEAPI && !get_boolean(cpreferences, "use_oneapirt")) {
     info.use_hardware_raytracing = false;
   }
-
+  std::cout << "Adjusting from preferences" << std::endl;
   if (info.type == DEVICE_HIP && !get_boolean(cpreferences, "use_hiprt")) {
-    info.use_hardware_raytracing = false;
+      std::cout << "Adjusting from preferences OFF" << std::endl;
+    //info.use_hardware_raytracing = false;
   }
 }
 

@@ -79,6 +79,7 @@ HIPRTDevice::HIPRTDevice(const DeviceInfo &info,
       prims_time(this, "prims_time", MEM_GLOBAL),
       prim_time_offset(this, "prim_time_offset", MEM_GLOBAL)
 {
+  std::cout << "Creating HIPRT device" << std::endl;
   HIPContextScope scope(this);
   global_stack_buffer = {0};
   hiprtContextCreationInput hiprt_context_input = {nullptr};

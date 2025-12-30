@@ -209,6 +209,13 @@ ccl_device_inline int clampi(int x, int lo, int hi)
   return (x < lo) ? lo : (x > hi ? hi : x);
 }
 
+#if defined(DUMMY_KERNEL)
+#define atomic_fetch_and_add_uint32(ptr, val) 0
+#define atomic_fetch_and_sub_uint32(ptr, val) 0
+#define atomic_add_and_fetch_float(ptr, val) 0
+#define atomic_compare_and_swap_float(ptr, oldval, newval) 0
+#endif
+
 #if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL)
 
 // TODO esto es solo para cpu, mover a su sitio correspondiente.
@@ -253,22 +260,6 @@ static inline float _acas_f32(float* p, float expected, float desired) {
 #define atomic_compare_and_swap_float(ptr, oldval, newval) _acas_f32((ptr), (float)(oldval), (float)(newval))
 
 #elif defined(OPTIX_KERNEL) || defined(CUDA_KERNEL)
-#    define atomic_add_and_fetch_float(p, x) (atomicAdd((float *)(p), (float)(x)) + (float)(x))
-#    define atomic_fetch_and_add_uint32(p, x) atomicAdd((unsigned int *)(p), (unsigned int)(x))
-#    define atomic_fetch_and_sub_uint32(p, x) atomicSub((unsigned int *)(p), (unsigned int)(x))
-ccl_device_inline float atomic_compare_and_swap_float(volatile float *dest,
-                                                      const float old_val,
-                                                      const float new_val)
-{
-  union {
-    unsigned int int_value;
-    float float_value;
-  } new_value, prev_value, result;
-  prev_value.float_value = old_val;
-  new_value.float_value = new_val;
-  result.int_value = atomicCAS((unsigned int *)dest, prev_value.int_value, new_value.int_value);
-  return result.float_value;
-}
 
 typedef unsigned short half;
 

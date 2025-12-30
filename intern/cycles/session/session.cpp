@@ -227,7 +227,7 @@ void Session::run_main_render_loop()
     }
   }
 
-  std::cout << "Printing times" << std::endl;
+  std::cout << "Printing times of " << device->info.type << std::endl;
   device->print_times();
 
 }

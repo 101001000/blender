@@ -71,6 +71,7 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
 
     uint id = 0;
     uint prim_id = 0;
+    int i = 0;
 
     do{
           
@@ -103,6 +104,13 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
 
       prt_ray.tmin = hit.t + 0.001f;
       prt_ray.self_id = self_object_size + prim_id;
+
+      if(i++ > 1000){
+        #ifdef HIP_KERNEL
+        printf("Max iterations reached\n");
+        #endif
+        return false;
+      }
 
     }while(!terminate_ray_visibility(ray->self, id, prim_id, visibility));
 
@@ -220,6 +228,7 @@ ccl_device_intersect bool scene_intersect_local(KernelGlobals kg,
   float v;
   float t;
   bool out = false;
+  int i = 0;
 
   do{
         
@@ -247,6 +256,13 @@ ccl_device_intersect bool scene_intersect_local(KernelGlobals kg,
 
     prt_ray.tmin = t + 0.001f;
     prt_ray.self_id = self_object_size + kernel_data_fetch(prim_ids, hit.primitive_id);
+
+    if(i++ > 1000){
+      #ifdef HIP_KERNEL
+      printf("Max iterations reached\n");
+      #endif
+      return false;
+    }
 
   }while(!anyhit_local_hit(object_id, local_object, prim_id, max_hits, ray->self, lcg_state, local_isect, t, u, v, out));
 

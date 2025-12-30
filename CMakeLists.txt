@@ -11,8 +11,8 @@
 
 
 set(PRT_EXTRA_KERNELS simple_integrator_init_from_camera simple_integrator_reset simple_integrator_intersect_closest simple_prefix_sum simple_integrator_sorted_paths_array simple_integrator_shade_surface simple_integrator_shade_background simple_integrator_queued_paths_array simple_integrator_compact_paths_array simple_integrator_terminated_paths_array simple_integrator_compact_states simple_adaptive_sampling_convergence_check simple_integrator_intersect_shadow simple_integrator_shade_shadow simple_integrator_queued_shadow_paths_array simple_integrator_terminated_shadow_paths_array simple_integrator_compact_shadow_paths_array simple_integrator_compact_shadow_states simple_integrator_shade_light simple_shader_eval_curve_shadow_transparency simple_shader_eval_background simple_integrator_intersect_subsurface simple_film_convert_combined_half_rgba simple_integrator_intersect_volume_stack simple_integrator_shade_volume)
-set(KA_USE_OPTIX ON)
-set(OptiX_ROOT /home/quique/Desktop/NVIDIA-OptiX-SDK-7.5.0-linux64-x86_64)
+#set(KA_USE_OPTIX ON)
+#set(OptiX_ROOT /home/quique/Desktop/NVIDIA-OptiX-SDK-7.5.0-linux64-x86_64)
 #set(OptiX_ROOT /homelocal/encalle_local/Downloads/NVIDIA-OptiX-SDK-7.5.0-linux64-x86_64)
 #set(KA_SYCL_COMPILE_TARGETS spir64_gen,nvptx64-nvidia-cuda,amdgcn-amd-amdhsa)
 #set(KA_SYCL_COMPILE_TARGETS amdgcn-amd-amdhsa)
@@ -21,8 +21,8 @@ set(OptiX_ROOT /home/quique/Desktop/NVIDIA-OptiX-SDK-7.5.0-linux64-x86_64)
 #set(KA_USE_EMBREE_SYCL ON)
 #set(KA_USE_EMBREE_CPU ON)
 #set(embree_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/embree4.3.2)
-#set(KA_USE_ROCM ON)
-#set(ROCM_ROOT /opt/rocm)
+set(KA_USE_ROCM ON)
+set(ROCM_ROOT /opt/rocm)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   if(NOT DEFINED WITH_IN_SOURCE_BUILD)
@@ -739,7 +739,7 @@ if(NOT APPLE AND NOT (WIN32 AND CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64"))
   mark_as_advanced(WITH_CYCLES_DEVICE_HIP)
   mark_as_advanced(CYCLES_HIP_BINARIES_ARCH)
 
-  option(WITH_CYCLES_DEVICE_HIPRT "Enable Cycles AMD HIPRT support" OFF)
+  option(WITH_CYCLES_DEVICE_HIPRT "Enable Cycles AMD HIPRT support" ON)
   mark_as_advanced(WITH_CYCLES_DEVICE_HIPRT)
 endif()
 
