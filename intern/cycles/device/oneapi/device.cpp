@@ -22,7 +22,9 @@ CCL_NAMESPACE_BEGIN
 
 bool device_oneapi_init()
 {
+  std::cout << "device_oneapi_init" << std::endl;
 #if !defined(WITH_ONEAPI)
+  std::cout << "device_oneapi_init WITH_ONEAPI not defined" << std::endl;
   return false;
 #else
 

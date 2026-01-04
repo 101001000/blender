@@ -18,11 +18,14 @@ set(PRT_EXTRA_KERNELS simple_integrator_init_from_camera simple_integrator_reset
 #set(KA_SYCL_COMPILE_TARGETS amdgcn-amd-amdhsa)
 #set(KA_USE_SYCL ON)
 #set(DPCPP_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/dpc++6.1.0)
-#set(KA_USE_EMBREE_SYCL ON)
+set(KA_USE_EMBREE_SYCL ON)
+set(SYCL_ROOT_DIR /scratch/encalle/dpcpp)
 #set(KA_USE_EMBREE_CPU ON)
+set(DPCPP_ROOT /scratch/encalle/dpcpp)
 #set(embree_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/embree4.3.2)
-set(KA_USE_ROCM ON)
-set(ROCM_ROOT /opt/rocm)
+set(embree_ROOT /scratch/encalle/embree4.3.2)
+#set(KA_USE_ROCM ON)
+#set(ROCM_ROOT /opt/rocm)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   if(NOT DEFINED WITH_IN_SOURCE_BUILD)
@@ -750,7 +753,7 @@ endif()
 
 # oneAPI
 if(NOT APPLE AND NOT (WIN32 AND CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64"))
-  option(WITH_CYCLES_DEVICE_ONEAPI "Enable Cycles oneAPI compute support" OFF)
+  option(WITH_CYCLES_DEVICE_ONEAPI "Enable Cycles oneAPI compute support" ON)
   option(WITH_CYCLES_ONEAPI_BINARIES "\
 Enable Ahead-Of-Time compilation for Cycles oneAPI device"
     OFF

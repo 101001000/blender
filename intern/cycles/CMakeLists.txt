@@ -26,8 +26,9 @@ endif()
 
 #TODO: Pack this
 #set(portableRT_DIR /home/quique/Desktop/portableRT/build/install/lib/cmake/portableRT)
-set(portableRT_DIR /homelocal/encalle_local/Desktop/Projects/blender_test/portableRT/build/install/lib/cmake/portableRT)
+#set(portableRT_DIR /homelocal/encalle_local/Desktop/Projects/blender_test/portableRT/build/install/lib/cmake/portableRT)
 #set(portableRT_DIR /scratch/encalle/portableRT/build/install/lib/cmake/portableRT)
+set(portableRT_DIR /scratch/encalle/blender_test/portableRT/build/install/lib/cmake/portableRT)
 find_package(portableRT REQUIRED)
 #set_and_warn_library_found("portableRT" PORTABLERT_FOUND WITH_CYCLES_DEVICE_PORTABLERT)
 

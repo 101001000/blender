@@ -160,10 +160,11 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
         };
 
         assert(args.count == 1);
-        
         KernelArgs ka;
         ka.num_states = get_scalar<int>(args.values[0]);
+        std::cout << "init computation" << std::endl;
         device->m_backend->parallel_invoke("simple_integrator_reset", dummy_rays, dummy_output, &ka, sizeof(ka));
+        std::cout << "finished computation" << std::endl;
         break;
     }
 

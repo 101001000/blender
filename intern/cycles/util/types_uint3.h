@@ -36,7 +36,7 @@ ccl_device_inline uint3 make_uint3(const uint x, const uint y, uint z)
 
 #if defined(__KERNEL_METAL__)
 /* Metal has native packed_float3. */
-#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_ONEAPI__)  || defined(OPTIX_KERNEL) || defined(CUDA_KERNEL)
+#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_ONEAPI__) || defined(OPTIX_KERNEL) || defined(CUDA_KERNEL) || defined(EMBREE_SYCL_KERNEL)
 /* CUDA and oneAPI uint3 are already packed. */
 using packed_uint3 = uint3;
 #else

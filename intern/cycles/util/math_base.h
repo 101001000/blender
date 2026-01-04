@@ -87,7 +87,7 @@ CCL_NAMESPACE_BEGIN
 
 /* Scalar */
 
-#if !defined(__HIP__) && !defined(__KERNEL_ONEAPI__)
+#if !defined(__HIP__) && !defined(__KERNEL_ONEAPI__) && !defined(EMBREE_SYCL_KERNEL) // esto da igual
 #  ifdef _WIN32
 ccl_device_inline float fmaxf(const float a, const float b)
 {
@@ -103,7 +103,7 @@ ccl_device_inline float fminf(const float a, const float b)
 #endif   /* __HIP__, __KERNEL_ONEAPI__ */
 
 #if !defined(__KERNEL_GPU__) || defined(__KERNEL_ONEAPI__) || (defined(__KERNEL_SIMPLE__) && !defined(OPTIX_KERNEL) && !defined(HIP_KERNEL) && !defined(CUDA_KERNEL))
-#  ifndef __KERNEL_ONEAPI__
+#  if !defined(__KERNEL_ONEAPI__) && !defined(EMBREE_SYCL_KERNEL)
 using std::isfinite;
 using std::isnan;
 using std::sqrt;
@@ -213,7 +213,7 @@ ccl_device_inline float max4(const float a, const float b, float c, const float 
   return max(max(a, b), max(c, d));
 }
 
-#if !defined(__KERNEL_METAL__) && !defined(__KERNEL_ONEAPI__)
+#if !defined(__KERNEL_METAL__) && !defined(__KERNEL_ONEAPI__) && !defined(EMBREE_SYCL_KERNEL)
 /* Int/Float conversion */
 
 ccl_device_inline int as_int(const uint i)
@@ -683,7 +683,7 @@ ccl_device_inline uint count_leading_zeros(const uint x)
   return __clz(x);
 #elif defined(__KERNEL_METAL__)
   return clz(x);
-#elif defined(__KERNEL_ONEAPI__)
+#elif defined(__KERNEL_ONEAPI__) || defined(EMBREE_SYCL_KERNEL)
   return sycl::clz(x);
 #else
   uint v = x;
@@ -713,7 +713,7 @@ ccl_device_inline uint count_trailing_zeros(const uint x)
   return (__ffs(x) - 1);
 #elif defined(__KERNEL_METAL__)
   return ctz(x);
-#elif defined(__KERNEL_ONEAPI__)
+#elif defined(__KERNEL_ONEAPI__) || defined(EMBREE_SYCL_KERNEL)
   return sycl::ctz(x);
 #else
   assert(x != 0);

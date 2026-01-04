@@ -31,6 +31,12 @@ int OneapiDeviceQueue::num_concurrent_states(const size_t state_size) const
   VLOG_DEVICE_STATS << "GPU queue concurrent states: " << num_states << ", using up to "
                     << string_human_readable_size(num_states * state_size);
 
+  static bool show = false;                  
+  if (!show) {
+    show = true;
+    std::cout << "NUM_CONCURRENT_STATES=" << num_states << std::endl;
+  }
+
   return num_states;
 }
 
@@ -39,6 +45,11 @@ int OneapiDeviceQueue::num_concurrent_busy_states(const size_t /*state_size*/) c
   const int max_num_threads = oneapi_device_->get_num_multiprocessors() *
                               oneapi_device_->get_max_num_threads_per_multiprocessor();
 
+  static bool show = false;                  
+  if (!show) {
+    show = true;
+    std::cout << "ONEAPI_MAX_BUSY_STATES=" << (4 * max(8 * max_num_threads, 65536)) << std::endl;
+  }
   return 4 * max(8 * max_num_threads, 65536);
 }
 
@@ -79,6 +90,8 @@ bool OneapiDeviceQueue::enqueue(DeviceKernel kernel,
 
   void **args = const_cast<void **>(_args.values);
 
+  auto start = std::chrono::high_resolution_clock::now();
+
   debug_enqueue_begin(kernel, signed_kernel_work_size);
   assert(signed_kernel_work_size >= 0);
   size_t kernel_global_size = (size_t)signed_kernel_work_size;
@@ -98,6 +111,17 @@ bool OneapiDeviceQueue::enqueue(DeviceKernel kernel,
     oneapi_device_->set_error("oneAPI kernel \"" + std::string(device_kernel_as_string(kernel)) +
                               "\" execution error: got runtime exception \"" +
                               oneapi_device_->oneapi_error_message() + "\"");
+  }
+
+  synchronize();
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+  if( device->kernel_times.find(device_kernel_as_string(kernel)) == device->kernel_times.end() ) {
+      device->kernel_times[device_kernel_as_string(kernel)] = duration;
+  } else {
+      device->kernel_times[device_kernel_as_string(kernel)] += duration;
   }
 
   debug_enqueue_end();

@@ -172,6 +172,83 @@
 #define __device__
 #endif
 
+#ifdef EMBREE_SYCL_KERNEL
+
+#define fabsf(x) sycl::fabs((x))
+#define copysignf(x, y) sycl::copysign((x), (y))
+#define asinf(x) sycl::asin((x))
+#define acosf(x) sycl::acos((x))
+#define atanf(x) sycl::atan((x))
+#define floorf(x) sycl::floor((x))
+#define ceilf(x) sycl::ceil((x))
+#define sinhf(x) sycl::sinh((x))
+#define coshf(x) sycl::cosh((x))
+#define tanhf(x) sycl::tanh((x))
+#define hypotf(x, y) sycl::hypot((x), (y))
+#define atan2f(x, y) sycl::atan2((x), (y))
+#define fmaxf(x, y) sycl::fmax((x), (y))
+#define fminf(x, y) sycl::fmin((x), (y))
+#define fmodf(x, y) sycl::fmod((x), (y))
+#define lgammaf(x) sycl::lgamma((x))
+
+#define cosf(x) sycl::native::cos(((float)(x)))
+#define sinf(x) sycl::native::sin(((float)(x)))
+#define powf(x, y) sycl::native::powr(((float)(x)), ((float)(y)))
+#define tanf(x) sycl::native::tan(((float)(x)))
+#define logf(x) sycl::native::log(((float)(x)))
+#define expf(x) sycl::native::exp(((float)(x)))
+#define sqrtf(x) sycl::native::sqrt(((float)(x)))
+
+#define __forceinline __attribute__((always_inline))
+
+#define ccl_device
+#define ccl_device_extern extern "C"
+#define ccl_global
+#define ccl_always_inline __attribute__((always_inline))
+#define ccl_device_inline inline
+#define ccl_noinline __attribute__((noinline))
+#define ccl_inline_constant const constexpr
+#define ccl_device_constant static constexpr
+#define ccl_static_constexpr static constexpr
+#define ccl_device_forceinline __attribute__((always_inline))
+#define ccl_device_noinline ccl_device ccl_noinline
+#define ccl_device_noinline_cpu ccl_device
+#define ccl_device_inline_method ccl_device
+#define ccl_restrict __restrict__
+#define ccl_optional_struct_init
+#define ccl_private
+#define ccl_ray_data ccl_private
+#define ccl_gpu_shared
+#define ATTR_FALLTHROUGH __attribute__((fallthrough))
+#define ccl_constant const
+#define ccl_try_align(...) __attribute__((aligned(__VA_ARGS__)))
+#define ccl_align(n) __attribute__((aligned(n)))
+#define kernel_assert(cond)
+#define ccl_may_alias
+
+using uchar = unsigned char;
+using sycl::half;
+
+/* math functions */
+ccl_device_forceinline float __uint_as_float(unsigned int x)
+{
+  return sycl::bit_cast<float>(x);
+}
+ccl_device_forceinline unsigned int __float_as_uint(const float x)
+{
+  return sycl::bit_cast<unsigned int>(x);
+}
+ccl_device_forceinline float __int_as_float(const int x)
+{
+  return sycl::bit_cast<float>(x);
+}
+ccl_device_forceinline int __float_as_int(const float x)
+{
+  return sycl::bit_cast<int>(x);
+}
+
+#endif
+
 #define ccl_gpu_kernel_signature(name, ...) PRT_KERNEL(simple_##name, __VA_ARGS__)
 
 #define ccl_gpu_kernel_lambda(func, ...) \
