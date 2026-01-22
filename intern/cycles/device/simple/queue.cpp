@@ -2,15 +2,23 @@
 
 #include "device/simple/queue.h"
 #include "device/simple/device_impl.h"
+#include "kernel/device/simple/globals.h"
+
 
 CCL_NAMESPACE_BEGIN
 
 
 SimpleDeviceQueue::SimpleDeviceQueue(SimpleDevice *device) : DeviceQueue(device), device(device) {
 
+    const int max_num_threads = device->m_backend->device_compute_units() * device->m_backend->device_max_threads_per_compute_unit();
 
-    m_concurrent_states = 1048576;
-    m_concurrent_busy_states = 64;
+    if(device->m_backend->name() == "EMBREE_SYCL"){
+        m_concurrent_states = 16 * max(8 * max_num_threads, 65536);
+        m_concurrent_busy_states = 4 * max(8 * max_num_threads, 65536);
+    } else {
+        m_concurrent_states = max(max_num_threads, 65536) * 16;
+        m_concurrent_busy_states = 4 * max_num_threads;
+    }
 
     if (const char* env = std::getenv("CYCLES_CONCURRENT_STATES")) {
         char* end = nullptr;
@@ -162,9 +170,7 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
         assert(args.count == 1);
         KernelArgs ka;
         ka.num_states = get_scalar<int>(args.values[0]);
-        std::cout << "init computation" << std::endl;
         device->m_backend->parallel_invoke("simple_integrator_reset", dummy_rays, dummy_output, &ka, sizeof(ka));
-        std::cout << "finished computation" << std::endl;
         break;
     }
 
@@ -186,6 +192,7 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
     }
 
     case DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SORTED_PATHS_ARRAY: {
+
         struct KernelArgs {
             int num_states;
             int num_states_limit;
@@ -259,7 +266,18 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
         ka.indices = get_pointer<int>(args.values[1]);
         ka.num_indices = get_pointer<int>(args.values[2]);
         ka.kernel_index = get_scalar<int>(args.values[3]);
-        device->m_backend->parallel_invoke("simple_integrator_queued_paths_array", dummy_rays, dummy_output, &ka, sizeof(ka));
+        
+        //if(device->m_backend->name() == "EMBREE_CPU"){
+        //    KernelParamsSimple *kernel_globals = reinterpret_cast<KernelParamsSimple*>(device->m_backend->m_kernel_globals->data);
+        //    for(int i = 0; i < ka.num_states; ++i){
+        //        if(kernel_globals->integrator_state.path.queued_kernel[i] == ka.kernel_index){
+        //            ka.indices[(*ka.num_indices)++] = i;
+        //        }
+        //    }
+        //} else {
+            device->m_backend->parallel_invoke("simple_integrator_queued_paths_array", dummy_rays, dummy_output, &ka, sizeof(ka));
+        //}
+
         break;
     }
 
@@ -458,7 +476,18 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
         ka.indices = get_pointer<int>(args.values[1]);
         ka.num_indices = get_pointer<int>(args.values[2]);
         ka.kernel_index = get_scalar<int>(args.values[3]);
-        device->m_backend->parallel_invoke("simple_integrator_queued_shadow_paths_array", dummy_rays, dummy_output, &ka, sizeof(ka));
+
+        //if(device->m_backend->name() == "EMBREE_CPU"){
+        //    KernelParamsSimple *kernel_globals = reinterpret_cast<KernelParamsSimple*>(device->m_backend->m_kernel_globals->data);
+        //    for(int i = 0; i < ka.num_states; ++i){
+        //        if(kernel_globals->integrator_state.shadow_path.queued_kernel[i] == ka.kernel_index){
+        //            ka.indices[(*ka.num_indices)++] = i;
+        //        }
+        //    }
+        //} else {
+            device->m_backend->parallel_invoke("simple_integrator_queued_shadow_paths_array", dummy_rays, dummy_output, &ka, sizeof(ka));
+        //}
+
         break;
     }
     case DeviceKernel::DEVICE_KERNEL_INTEGRATOR_TERMINATED_SHADOW_PATHS_ARRAY: {

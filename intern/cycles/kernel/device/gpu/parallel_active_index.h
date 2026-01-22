@@ -88,6 +88,65 @@ __device__
 #  else
                                           IsActiveOp is_active_op)
 {
+#if defined(EMBREE_CPU_KERNEL)
+
+
+  
+
+/*
+  int N = std::thread::hardware_concurrency();
+  const uint grain = 8192;
+
+  const int b = int(global_idx / grain);
+  const int lane = int(global_idx % grain);
+  const int thread_id = b % N;
+
+  const int k = (b - thread_id) / N;
+
+  const int local_idx = k * grain + lane;
+  const uint nb = (num_states + grain - 1u) / grain;
+  uint last_b = thread_id + ((nb - 1 - thread_id) / N) * N;
+  uint last_j = std::min((last_b + 1) * grain, num_states) - 1;
+  
+  int states_per_thread = static_cast<int>((1.0f / N) * num_states);
+
+  static int local_dest[128];
+  thread_local int* local_indices = new int[1000000];
+  int base_idx = 0;
+
+  if(global_idx == 0){
+    prt::barrier.set_count(std::min(N, static_cast<int>(nb)));
+  }
+  
+  if(local_idx == 0){
+    local_dest[thread_id] = 0;
+    base_idx = (*num_indices);
+    //prt::barrier.arrive_and_wait();
+  }
+
+  if ((uint)ccl_gpu_global_id_x() < num_states) {
+    if (is_active_op((uint)ccl_gpu_global_id_x())) {
+      local_indices[local_dest[thread_id]++] = (int)ccl_gpu_global_id_x();
+    }
+  }
+
+  if(global_idx == last_j){
+    //std::cout << "waiting " << b << " " << lane << " " << thread_id << " " << k << " " << local_idx << " " << global_idx << " " << states_per_thread << " " << std::endl;
+    prt::barrier.arrive_and_wait();
+    //std::cout << "waited" << std::endl;
+    int acc = 0;
+    for (int i = 0; i < thread_id; ++i) {
+      acc += local_dest[i];
+    }
+    for(int i = 0; i < local_dest[thread_id]; ++i){
+      indices[base_idx + i + acc] = local_indices[i];
+    }
+    atomic_fetch_and_add_uint32((uint *)num_indices, local_dest[thread_id]);
+  }
+
+  return;*/
+#endif
+
 #if defined(__KERNEL_SIMPLE__)// TODO: This is not efficient.
   // Id global de este "state".
   const uint state_index1 = (uint)ccl_gpu_global_id_x();

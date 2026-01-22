@@ -15,13 +15,16 @@
 #include "kernel/integrator/shade_shadow.h"
 #include "kernel/integrator/shade_surface.h"
 #include "kernel/integrator/shade_volume.h"
+#include "device/kernel.h"
 
 CCL_NAMESPACE_BEGIN
 
 ccl_device void integrator_megakernel(KernelGlobals kg,
                                       IntegratorState state,
-                                      ccl_global float *ccl_restrict render_buffer)
+                                      ccl_global float *ccl_restrict render_buffer,
+                                      std::map<std::string, std::chrono::duration<double>> &kernel_times)
 {
+  
   /* Each kernel indicates the next kernel to execute, so here we simply
    * have to check what that kernel is and execute it. */
   while (true) {
@@ -103,7 +106,7 @@ ccl_device void integrator_megakernel(KernelGlobals kg,
       }
       continue;
     }
-
+    
     break;
   }
 }

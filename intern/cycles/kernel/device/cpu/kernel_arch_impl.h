@@ -72,9 +72,10 @@ CCL_NAMESPACE_BEGIN
 #define DEFINE_INTEGRATOR_SHADE_KERNEL(name) \
   void KERNEL_FUNCTION_FULL_NAME(integrator_##name)(const ThreadKernelGlobalsCPU *kg, \
                                                     IntegratorStateCPU *state, \
-                                                    ccl_global float *render_buffer) \
+                                                    ccl_global float *render_buffer, \
+                                                    std::map<std::string, std::chrono::duration<double>> &kernel_times) \
   { \
-    KERNEL_INVOKE(name, kg, state, render_buffer); \
+    KERNEL_INVOKE(name, kg, state, render_buffer, kernel_times); \
   }
 
 #define DEFINE_INTEGRATOR_SHADOW_KERNEL(name) \

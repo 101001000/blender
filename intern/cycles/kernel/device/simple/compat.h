@@ -172,7 +172,7 @@
 #define __device__
 #endif
 
-#ifdef EMBREE_SYCL_KERNEL
+#if defined(EMBREE_SYCL_KERNEL) || defined(SYCL_KERNEL)
 
 #define fabsf(x) sycl::fabs((x))
 #define copysignf(x, y) sycl::copysign((x), (y))
@@ -249,6 +249,7 @@ ccl_device_forceinline int __float_as_int(const float x)
 
 #endif
 
+//#define ccl_gpu_kernel_signature(name, ...) prt_kernel void simple_##name(__VA_ARGS__)
 #define ccl_gpu_kernel_signature(name, ...) PRT_KERNEL(simple_##name, __VA_ARGS__)
 
 #define ccl_gpu_kernel_lambda(func, ...) \

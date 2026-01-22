@@ -1,6 +1,7 @@
 #pragma once
 
 
+//#define ccl_gpu_kernel_signature(name, ...) prt_kernel void simple_##name(__VA_ARGS__)
 #define ccl_gpu_kernel_signature(name, ...) PRT_KERNEL(simple_##name, __VA_ARGS__)
 #define ccl_gpu_kernel_postfix
 #define ccl_gpu_kernel(block_num_threads, thread_num_registers)

@@ -6,6 +6,9 @@
 
 #include "device/cpu/kernel_function.h"
 #include "util/half.h"
+#include <chrono>
+#include <string>
+#include <map>
 
 CCL_NAMESPACE_BEGIN
 
@@ -22,7 +25,8 @@ class CPUKernels {
       CPUKernelFunction<void (*)(const ThreadKernelGlobalsCPU *kg, IntegratorStateCPU *state)>;
   using IntegratorShadeFunction = CPUKernelFunction<void (*)(const ThreadKernelGlobalsCPU *kg,
                                                              IntegratorStateCPU *state,
-                                                             ccl_global float *render_buffer)>;
+                                                             ccl_global float *render_buffer,
+                                                             std::map<std::string, std::chrono::duration<double>> &kernel_times)>;
   using IntegratorInitFunction = CPUKernelFunction<bool (*)(const ThreadKernelGlobalsCPU *kg,
                                                             IntegratorStateCPU *state,
                                                             KernelWorkTile *tile,

@@ -113,6 +113,9 @@ void PathTraceWorkCPU::render_samples_full_pipeline(ThreadKernelGlobalsCPU *kern
                                                     const KernelWorkTile &work_tile,
                                                     const int samples_num)
 {
+
+  std::map<std::string, std::chrono::duration<double>> kernel_times;
+
   const bool has_bake = device_scene_->data.bake.use;
 
   IntegratorStateCPU integrator_states[2];
@@ -148,7 +151,7 @@ void PathTraceWorkCPU::render_samples_full_pipeline(ThreadKernelGlobalsCPU *kern
       }
     }
 
-    kernels_.integrator_megakernel(kernel_globals, state, render_buffer);
+    kernels_.integrator_megakernel(kernel_globals, state, render_buffer, kernel_times);
 
 #ifdef WITH_PATH_GUIDING
     if (kernel_globals->data.integrator.train_guiding) {
@@ -158,7 +161,7 @@ void PathTraceWorkCPU::render_samples_full_pipeline(ThreadKernelGlobalsCPU *kern
 #endif
 
     if (shadow_catcher_state) {
-      kernels_.integrator_megakernel(kernel_globals, shadow_catcher_state, render_buffer);
+      kernels_.integrator_megakernel(kernel_globals, shadow_catcher_state, render_buffer, kernel_times);
     }
 
     ++sample_work_tile.start_sample;

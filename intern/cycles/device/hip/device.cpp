@@ -200,9 +200,13 @@ void device_hip_info(vector<DeviceInfo> &devices)
     }
 
     /* Disable on RDNA1 due to bug rendering curves in HIP-RT 2.5 or HIP SDK 6.3. */
-    info.use_hardware_raytracing = has_hardware_raytracing && is_rdna2_or_newer;
 
-    std::cout << "is_rdna2_or_newer" << is_rdna2_or_newer << std::endl;
+    bool force_hiprt = false;
+    if (const char* v = std::getenv("FORCE_HIPRT")) {
+        force_hiprt = (v[0] == '1');
+    }
+
+    info.use_hardware_raytracing = has_hardware_raytracing && is_rdna2_or_newer && force_hiprt;
 
     int pci_location[3] = {0, 0, 0};
     hipDeviceGetAttribute(&pci_location[0], hipDeviceAttributePciDomainID, num);

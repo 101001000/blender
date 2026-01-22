@@ -25,10 +25,6 @@ if(NOT CYCLES_STANDALONE_REPOSITORY)
 endif()
 
 #TODO: Pack this
-#set(portableRT_DIR /home/quique/Desktop/portableRT/build/install/lib/cmake/portableRT)
-#set(portableRT_DIR /homelocal/encalle_local/Desktop/Projects/blender_test/portableRT/build/install/lib/cmake/portableRT)
-#set(portableRT_DIR /scratch/encalle/portableRT/build/install/lib/cmake/portableRT)
-set(portableRT_DIR /scratch/encalle/blender_test/portableRT/build/install/lib/cmake/portableRT)
 find_package(portableRT REQUIRED)
 #set_and_warn_library_found("portableRT" PORTABLERT_FOUND WITH_CYCLES_DEVICE_PORTABLERT)
 
@@ -295,7 +291,7 @@ endif()
 if(WITH_CYCLES_EMBREE)
   add_definitions(-DWITH_EMBREE)
   if(WITH_CYCLES_DEVICE_ONEAPI AND EMBREE_SYCL_SUPPORT)
-    add_definitions(-DWITH_EMBREE_GPU)
+    #add_definitions(-DWITH_EMBREE_GPU)
   endif()
   add_definitions(-DEMBREE_MAJOR_VERSION=${EMBREE_MAJOR_VERSION})
   include_directories(

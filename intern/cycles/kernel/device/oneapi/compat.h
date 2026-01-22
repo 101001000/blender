@@ -72,7 +72,6 @@ void oneapi_kernel_##name(KernelGlobalsGPU *ccl_restrict kg, \
                           sycl::handler &cgh, \
                           __VA_ARGS__) { \
       (kg); \
-      std::cout << "oneapi_kernel_" #name << " invoked with " << kernel_global_size << " global size and " << kernel_local_size << " local size" << std::endl; \
       cgh.parallel_for( \
           sycl::nd_range<1>(kernel_global_size, kernel_local_size), \
           [=](sycl::nd_item<1> item) {

@@ -31,7 +31,7 @@
 
 CCL_NAMESPACE_BEGIN
 
-#if defined(__KERNEL_ONEAPI__) || defined(EMBREE_SYCL_KERNEL)
+#if defined(__KERNEL_ONEAPI__) || defined(EMBREE_SYCL_KERNEL) || defined(SYCL_KERNEL)
 using numhit_t = uint16_t;
 #else
 using numhit_t = uint32_t;

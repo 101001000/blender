@@ -13,7 +13,9 @@
 #pragma GCC diagnostic ignored "-Wmacro-redefined"
 #pragma GCC diagnostic ignored "-Warray-bounds"
 
-#define PRT_GLOBALS PRT_GVAR(kernel_globals, KernelParamsSimple) 
+
+struct KernelParamsSimple;
+prt_global KernelParamsSimple kernel_globals;
 
 #include <portableRT/portableRT.hpp>
 

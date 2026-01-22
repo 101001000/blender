@@ -179,7 +179,6 @@ DeviceInfo blender_device_info(BL::Preferences &b_preferences,
       device = cpu_device;
     }
   }
-
   return device;
 }
 

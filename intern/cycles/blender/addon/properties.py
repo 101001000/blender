@@ -180,7 +180,7 @@ enum_device_type = (
     ('HIP', "HIP", "HIP", 4),
     ('METAL', "Metal", "Metal", 5),
     ('ONEAPI', "oneAPI", "oneAPI", 6),
-    ('SIMPLE', "PortableRT", "PortableRT", 7)
+    ('SIMPLE', "PortableRT", "PortableRT", 7),
 )
 
 enum_texture_limit = (

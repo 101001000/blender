@@ -16,7 +16,8 @@
   void KERNEL_FUNCTION_FULL_NAME(integrator_##name)( \
       const ThreadKernelGlobalsCPU *ccl_restrict kg, \
       IntegratorStateCPU *state, \
-      ccl_global float *render_buffer)
+      ccl_global float *render_buffer, \
+      std::map<std::string, std::chrono::duration<double>> &kernel_times)
 
 #define KERNEL_INTEGRATOR_INIT_FUNCTION(name) \
   bool KERNEL_FUNCTION_FULL_NAME(integrator_##name)( \
