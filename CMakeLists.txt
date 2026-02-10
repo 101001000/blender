@@ -11,17 +11,18 @@
 
 
 set(PRT_EXTRA_KERNELS simple_integrator_init_from_camera simple_integrator_reset simple_integrator_intersect_closest simple_prefix_sum simple_integrator_sorted_paths_array simple_integrator_shade_surface simple_integrator_shade_background simple_integrator_queued_paths_array simple_integrator_compact_paths_array simple_integrator_terminated_paths_array simple_integrator_compact_states simple_adaptive_sampling_convergence_check simple_integrator_intersect_shadow simple_integrator_shade_shadow simple_integrator_queued_shadow_paths_array simple_integrator_terminated_shadow_paths_array simple_integrator_compact_shadow_paths_array simple_integrator_compact_shadow_states simple_integrator_shade_light simple_shader_eval_curve_shadow_transparency simple_shader_eval_background simple_integrator_intersect_subsurface simple_integrator_intersect_volume_stack simple_integrator_shade_volume)
-set(KA_USE_OPTIX ON)
-set(KA_SYCL_COMPILE_TARGETS spir64_gen,nvptx64-nvidia-cuda,amdgcn-amd-amdhsa)
+#set(KA_USE_OPTIX ON)
+#set(KA_SYCL_COMPILE_TARGETS spir64_gen,nvptx64-nvidia-cuda,amdgcn-amd-amdhsa)
 #set(KA_SYCL_COMPILE_TARGETS amdgcn-amd-amdhsa)
-#set(KA_SYCL_COMPILE_TARGETS nvptx64-nvidia-cuda)
+set(KA_SYCL_COMPILE_TARGETS nvptx64-nvidia-cuda)
 #set(KA_SYCL_COMPILE_TARGETS spir64_gen)
 set(KA_USE_SYCL ON)
-set(KA_USE_EMBREE_SYCL ON)
-set(SYCL_ROOT_DIR ${DPCPP_ROOT})
-set(KA_USE_EMBREE_CPU ON)
-set(KA_USE_ROCM ON)
-set(ROCM_ROOT /opt/rocm)
+set(DPCPP_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/dpc++6.1.0)
+#set(KA_USE_EMBREE_SYCL ON)
+#set(SYCL_ROOT_DIR ${DPCPP_ROOT})
+#set(KA_USE_EMBREE_CPU ON)
+#set(KA_USE_ROCM ON)
+#set(ROCM_ROOT /opt/rocm)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   if(NOT DEFINED WITH_IN_SOURCE_BUILD)
@@ -741,6 +742,9 @@ if(NOT APPLE AND NOT (WIN32 AND CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64"))
   option(WITH_CYCLES_DEVICE_HIPRT "Enable Cycles AMD HIPRT support" ON)
   mark_as_advanced(WITH_CYCLES_DEVICE_HIPRT)
 endif()
+
+option(WITH_CYCLES_DEVICE_PORTABLERT "Enable Cycles PortableRT support" ON)
+mark_as_advanced(WITH_CYCLES_DEVICE_PORTABLERT)
 
 # Apple Metal
 if(APPLE)

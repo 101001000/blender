@@ -347,7 +347,7 @@ ccl_device_inline float surface_shader_bsdf_eval_pdfs(const KernelGlobals kg,
   return (sum_sample_weight > 0.0f) ? sum_pdf / sum_sample_weight : 0.0f;
 }
 
-#if !defined(__KERNEL_CUDA__) && !defined(CUDA_KERNEL) && !defined(OPTIX_KERNEL)
+#if !defined(__KERNEL_CUDA__) && !defined(PRT_CUDA_KERNEL) && !defined(PRT_OPTIX_KERNEL)
 ccl_device
 #else
 ccl_device_inline

@@ -11,7 +11,7 @@
 CCL_NAMESPACE_BEGIN
 
 #ifndef __KERNEL_NATIVE_VECTOR_TYPES__
-#  if defined(__KERNEL_ONEAPI__) || defined(EMBREE_SYCL_KERNEL) || defined(SYCL_KERNEL)
+#  if defined(__KERNEL_ONEAPI__) || defined(PRT_EMBREE_SYCL_KERNEL) || defined(PRT_SYCL_KERNEL)
 /* Define float3 as packed for oneAPI. */
 struct float3
 #  else
@@ -140,7 +140,7 @@ ccl_device_inline int4 make_int4(const float3 f)
 
 #if defined(__KERNEL_METAL__)
 /* Metal has native packed_float3. */
-#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__) || defined(__KERNEL_ONEAPI__) || defined(EMBREE_SYCL_KERNEL) || defined(SYCL_KERNEL) || (defined(__KERNEL_SIMPLE__) && defined(OPTIX_KERNEL)) || (defined(__KERNEL_SIMPLE__) && defined(HIP_KERNEL)) || (defined(__KERNEL_SIMPLE__) && defined(CUDA_KERNEL))
+#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__) || defined(__KERNEL_ONEAPI__) || defined(PRT_EMBREE_SYCL_KERNEL) || defined(PRT_SYCL_KERNEL) || (defined(__KERNEL_SIMPLE__) && defined(PRT_OPTIX_KERNEL)) || (defined(__KERNEL_SIMPLE__) && defined(PRT_HIP_KERNEL)) || (defined(__KERNEL_SIMPLE__) && defined(PRT_CUDA_KERNEL))
 /* CUDA, HIP and oneAPI float3 are already packed. */
 using packed_float3 = float3;
 #else

@@ -20,7 +20,7 @@ prt_global KernelParamsSimple kernel_globals;
 #include <portableRT/portableRT.hpp>
 
 // TODO: Limpiar esto
-#if defined(DUMMY_KERNEL) || defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(OPTIX_KERNEL) || defined(CUDA_KERNEL) || defined(HIP_KERNEL) || defined(EMBREE_SYCL_KERNEL)
+#if defined(PRT_DUMMY_KERNEL) || defined(PRT_CPU_KERNEL) || defined(PRT_EMBREE_CPU_KERNEL) || defined(PRT_SYCL_KERNEL) || defined(PRT_OPTIX_KERNEL) || defined(PRT_CUDA_KERNEL) || defined(PRT_HIP_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL)
   #include "kernel/device/simple/compat.h"
   #include "util/half.h"
   #include "util/types.h"
@@ -141,12 +141,12 @@ prt_global KernelParamsSimple kernel_globals;
 #endif
 
 
-#if defined(DUMMY_KERNEL) || defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(HIP_KERNEL) || defined(OPTIX_KERNEL)  || defined(CUDA_KERNEL) || defined(EMBREE_SYCL_KERNEL)
+#if defined(PRT_DUMMY_KERNEL) || defined(PRT_CPU_KERNEL) || defined(PRT_EMBREE_CPU_KERNEL) || defined(PRT_SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(PRT_HIP_KERNEL) || defined(PRT_OPTIX_KERNEL)  || defined(PRT_CUDA_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL)
 #include "kernel/device/simple/config.h"
 #include "kernel/device/simple/globals.h"
 #endif
 
-#if defined(DUMMY_KERNEL) || defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL) || defined(SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(HIP_KERNEL) || defined(OPTIX_KERNEL)  || defined(CUDA_KERNEL) || defined(EMBREE_SYCL_KERNEL)
+#if defined(PRT_DUMMY_KERNEL) || defined(PRT_CPU_KERNEL) || defined(PRT_EMBREE_CPU_KERNEL) || defined(PRT_SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(PRT_HIP_KERNEL) || defined(PRT_OPTIX_KERNEL)  || defined(PRT_CUDA_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL)
 #include "kernel/device/gpu/image.h"
 #include "kernel/device/gpu/kernel.h"
 #endif

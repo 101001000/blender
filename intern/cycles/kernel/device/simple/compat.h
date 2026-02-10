@@ -17,7 +17,7 @@
 #  define ATTR_FALLTHROUGH
 #endif
 
-#ifdef HIP_KERNEL
+#ifdef PRT_HIP_KERNEL
 #  include "hip/hip_fp16.h"
 #  include "hip/hip_runtime.h"
 #endif
@@ -57,7 +57,7 @@
 #define ccl_gpu_warp_size 1
 #define ccl_gpu_block_idx_x global_idx
 
-#if defined(SYCL_KERNEL) || defined(EMBREE_SYCL_KERNEL) 
+#if defined(PRT_SYCL_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL) 
 #define ccl_gpu_syncthreads() sycl::ext::oneapi::this_work_item::get_nd_item<1>().barrier()
 #else 
 #define ccl_gpu_syncthreads void
@@ -95,7 +95,7 @@
 
 
 
-#if defined(OPTIX_KERNEL)
+#if defined(PRT_OPTIX_KERNEL)
   #define OPTIX_DONT_INCLUDE_CUDA
   #include <optix_device.h>
   #define ccl_device \
@@ -119,7 +119,7 @@
   #define ccl_restrict __restrict__
   #define ccl_align(n) __align__(n)
   #define ccl_gpu_syncthreads()
-#elif defined(CUDA_KERNEL)
+#elif defined(PRT_CUDA_KERNEL)
   #define ccl_device __device__ __inline__
   #define ccl_device_extern extern "C" __device__
   #if __CUDA_ARCH__ < 500
@@ -145,7 +145,7 @@
   #define ccl_align(n) __align__(n)
   #define ccl_optional_struct_init
   #define ccl_gpu_syncthreads() __syncthreads()
-#elif defined(HIP_KERNEL)
+#elif defined(PRT_HIP_KERNEL)
   #define ccl_device __device__ __inline__
   #define ccl_device_extern extern "C" __device__
   #define ccl_device_inline __device__ __inline__
@@ -172,7 +172,7 @@
 #define __device__
 #endif
 
-#if defined(EMBREE_SYCL_KERNEL) || defined(SYCL_KERNEL)
+#if defined(PRT_EMBREE_SYCL_KERNEL) || defined(PRT_SYCL_KERNEL)
 
 #define fabsf(x) sycl::fabs((x))
 #define copysignf(x, y) sycl::copysign((x), (y))
@@ -287,14 +287,14 @@ ccl_device_inline int clampi(int x, int lo, int hi)
   return (x < lo) ? lo : (x > hi ? hi : x);
 }
 
-#if defined(DUMMY_KERNEL)
+#if defined(PRT_DUMMY_KERNEL)
 #define atomic_fetch_and_add_uint32(ptr, val) 0
 #define atomic_fetch_and_sub_uint32(ptr, val) 0
 #define atomic_add_and_fetch_float(ptr, val) 0
 #define atomic_compare_and_swap_float(ptr, oldval, newval) 0
 #endif
 
-#if defined(CPU_KERNEL) || defined(EMBREE_CPU_KERNEL)
+#if defined(PRT_CPU_KERNEL) || defined(PRT_EMBREE_CPU_KERNEL)
 
 // TODO esto es solo para cpu, mover a su sitio correspondiente.
 // uint32/int: fetch_add/sub devuelven el valor viejo
@@ -337,7 +337,7 @@ static inline float _acas_f32(float* p, float expected, float desired) {
 #define atomic_add_and_fetch_float(ptr, val)  _aafe_f32((ptr), (float)(val))
 #define atomic_compare_and_swap_float(ptr, oldval, newval) _acas_f32((ptr), (float)(oldval), (float)(newval))
 
-#elif defined(OPTIX_KERNEL) || defined(CUDA_KERNEL)
+#elif defined(PRT_OPTIX_KERNEL) || defined(PRT_CUDA_KERNEL)
 
 typedef unsigned short half;
 

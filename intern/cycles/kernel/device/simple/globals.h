@@ -10,7 +10,7 @@
 #include "util/color.h"
 #include "util/texture.h"
 
-#if defined(SYCL_KERNEL) || defined(EMBREE_SYCL_KERNEL)
+#if defined(PRT_SYCL_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL)
 #include <sycl/sycl.hpp>
 #endif
 
@@ -46,11 +46,14 @@ ccl_device_inline const T &kernel_data_fetch_dbg_ref(const char *nm,
   if(i == static_cast<size_t>(-1)){
     //throw std::runtime_error("Invalid index");
     //
-    #ifdef HIP_KERNEL
-      printf("Invalid index %s %p %d\n", nm, base, i);
+    #ifdef PRT_HIP_KERNEL
+      //printf("Invalid index %s %p %d\n", nm, base, i);
     #endif
-    #ifdef SYCL_KERNEL
+    #ifdef PRT_SYCL_KERNEL
     //sycl::ext::oneapi::experimental::printf("Invalid index access for %s\n", nm);
+    #endif
+    #ifdef PRT_CPU_KERNEL
+      throw std::runtime_error("Invalid index access for " + std::string(nm));
     #endif
     return base[0];
   }

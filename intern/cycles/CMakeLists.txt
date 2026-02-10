@@ -24,10 +24,6 @@ if(NOT CYCLES_STANDALONE_REPOSITORY)
   include(cmake/macros.cmake)
 endif()
 
-#TODO: Pack this
-find_package(portableRT REQUIRED)
-#set_and_warn_library_found("portableRT" PORTABLERT_FOUND WITH_CYCLES_DEVICE_PORTABLERT)
-
 # Build Flags
 # TODO: this code could be refactored a bit to avoid duplication.
 # NOTE: CXX_HAS_SSE42 is needed in case passing SSE flags fails altogether (`gcc-arm`).

@@ -451,6 +451,11 @@ if(WITH_MATERIALX)
 endif()
 add_bundled_libraries(materialx/lib)
 
+#set(portableRT_DIR /homelocal/encalle_local/Desktop/Projects/blender_test/portableRT/build/install/lib/cmake/portableRT)
+find_package_wrapper(portableRT)
+set_and_warn_library_found("portableRT" portableRT_FOUND WITH_CYCLES_DEVICE_PORTABLERT)
+add_bundled_libraries(portablert/lib)
+
 # With Blender 4.4 libraries there is no more Boost. But Linux distros may have
 # older versions of libs like USD with a header dependency on Boost, so can't
 # remove this entirely yet.

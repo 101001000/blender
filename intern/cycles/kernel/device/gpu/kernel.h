@@ -64,7 +64,7 @@ ccl_gpu_kernel(GPU_KERNEL_BLOCK_NUM_THREADS, GPU_KERNEL_MAX_REGISTERS)
   const int state = ccl_gpu_global_id_x();
 
   if(state == 0){
-    #ifdef HIP_KERNEL
+    #ifdef PRT_HIP_KERNEL
       printf("SIZEOF device KernelParamsSimple %d\n", sizeof(KernelParamsSimple));
     #endif
   }

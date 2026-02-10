@@ -35,7 +35,7 @@ ccl_device_inline float half_to_float(half h_in)
 #else
 
 /* CUDA has its own half data type, no need to define then */
-#  if !defined(__KERNEL_CUDA__) && !defined(__KERNEL_HIP__) && !defined(__KERNEL_ONEAPI__) && !(defined(__KERNEL_SIMPLE__) && (defined(OPTIX_KERNEL) || defined(CUDA_KERNEL) || defined(HIP_KERNEL) || defined(EMBREE_SYCL_KERNEL) || defined(SYCL_KERNEL)))
+#  if !defined(__KERNEL_CUDA__) && !defined(__KERNEL_HIP__) && !defined(__KERNEL_ONEAPI__) && !(defined(__KERNEL_SIMPLE__) && (defined(PRT_OPTIX_KERNEL) || defined(PRT_CUDA_KERNEL) || defined(PRT_HIP_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL) || defined(PRT_SYCL_KERNEL)))
 /* Implementing this as a class rather than a typedef so that the compiler can tell it apart from
  * unsigned shorts. */
 class half {
@@ -69,7 +69,7 @@ struct half4 {
 
 ccl_device_inline half float_to_half_image(const float f)
 {
-#if defined(__KERNEL_METAL__) || defined(__KERNEL_ONEAPI__) || defined(EMBREE_SYCL_KERNEL) || defined(SYCL_KERNEL)
+#if defined(__KERNEL_METAL__) || defined(__KERNEL_ONEAPI__) || defined(PRT_EMBREE_SYCL_KERNEL) || defined(PRT_SYCL_KERNEL)
   return half(min(f, 65504.0f));
 #elif defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__)
   return __float2half(min(f, 65504.0f));
@@ -99,9 +99,9 @@ ccl_device_inline float half_to_float_image(half h)
 {
 #if defined(__KERNEL_METAL__)
   return half_to_float(h);
-#elif defined(__KERNEL_ONEAPI__) || defined(EMBREE_SYCL_KERNEL) || defined(SYCL_KERNEL)
+#elif defined(__KERNEL_ONEAPI__) || defined(PRT_EMBREE_SYCL_KERNEL) || defined(PRT_SYCL_KERNEL)
   return float(h);
-#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__) || (defined(OPTIX_KERNEL) && defined(__KERNEL_SIMPLE__)) || (defined(HIP_KERNEL) && defined(__KERNEL_SIMPLE__)) || (defined(CUDA_KERNEL) && defined(__KERNEL_SIMPLE__))
+#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__) || (defined(PRT_OPTIX_KERNEL) && defined(__KERNEL_SIMPLE__)) || (defined(PRT_HIP_KERNEL) && defined(__KERNEL_SIMPLE__)) || (defined(PRT_CUDA_KERNEL) && defined(__KERNEL_SIMPLE__))
   return __half2float(h);
 #else
   const int x = ((h & 0x8000) << 16) | (((h & 0x7c00) + 0x1C000) << 13) | ((h & 0x03FF) << 13);
@@ -134,9 +134,9 @@ ccl_device_inline float4 half4_to_float4_image(const half4 h)
 
 ccl_device_inline half float_to_half_display(const float f)
 {
-#if defined(__KERNEL_METAL__) || defined(__KERNEL_ONEAPI__) || defined(EMBREE_SYCL_KERNEL) || defined(SYCL_KERNEL)
+#if defined(__KERNEL_METAL__) || defined(__KERNEL_ONEAPI__) || defined(PRT_EMBREE_SYCL_KERNEL) || defined(PRT_SYCL_KERNEL)
   return half(min(f, 65504.0f));
-#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__) || (defined(OPTIX_KERNEL) && defined(__KERNEL_SIMPLE__)) || (defined(HIP_KERNEL) && defined(__KERNEL_SIMPLE__)) || (defined(CUDA_KERNEL) && defined(__KERNEL_SIMPLE__))
+#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__) || (defined(PRT_OPTIX_KERNEL) && defined(__KERNEL_SIMPLE__)) || (defined(PRT_HIP_KERNEL) && defined(__KERNEL_SIMPLE__)) || (defined(PRT_CUDA_KERNEL) && defined(__KERNEL_SIMPLE__))
   return __float2half(min(f, 65504.0f));
 #else
   const int x = __float_as_int((f > 0.0f) ? ((f < 65504.0f) ? f : 65504.0f) : 0.0f);

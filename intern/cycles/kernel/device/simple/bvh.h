@@ -106,7 +106,7 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
       prt_ray.self_id = self_object_size + prim_id;
 
       if(i++ > 1000){
-        #ifdef HIP_KERNEL
+        #ifdef PRT_HIP_KERNEL
         printf("Max iterations reached\n");
         #endif
         return false;
@@ -258,7 +258,7 @@ ccl_device_intersect bool scene_intersect_local(KernelGlobals kg,
     prt_ray.self_id = self_object_size + kernel_data_fetch(prim_ids, hit.primitive_id);
 
     if(i++ > 1000){
-      #ifdef HIP_KERNEL
+      #ifdef PRT_HIP_KERNEL
       printf("Max iterations reached\n");
       #endif
       return false;

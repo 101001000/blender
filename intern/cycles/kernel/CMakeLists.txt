@@ -1346,7 +1346,7 @@ cycles_add_gpu_kernel_dependencies(cycles_kernel_simple)
 
 
 prt_set_kernels(cycles_kernel device/simple/kernel.cpp)
-prt_install_kernels(cycles_kernel ${CYCLES_INSTALL_PATH}/lib)
+prt_install_kernels(cycles_kernel "lib")
 
 # Install kernel source for runtime compilation
 
