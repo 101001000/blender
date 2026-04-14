@@ -93,7 +93,11 @@ OneapiDevice::OneapiDevice(const DeviceInfo &info, Stats &stats, Profiler &profi
 #  endif
 
   if (use_hardware_raytracing) {
+    std::cout << "oneAPI will use hardware ray tracing for intersection acceleration." << std::endl;
     VLOG_INFO << "oneAPI will use hardware ray tracing for intersection acceleration.";
+  }else{
+    std::cout << "oneAPI will NOT USE hardware ray tracing for intersection acceleration." << std::endl;
+    VLOG_INFO << "oneAPI will NOT USE hardware ray tracing for intersection acceleration.";
   }
 
   size_t globals_segment_size;

@@ -117,7 +117,7 @@ endif()
 if(WITH_CYCLES_DEVICE_ONEAPI AND WITH_CYCLES_ONEAPI_BINARIES)
   if(NOT OCLOC_INSTALL_DIR)
     get_filename_component(_sycl_compiler_root ${SYCL_COMPILER} DIRECTORY)
-    get_filename_component(OCLOC_INSTALL_DIR "${_sycl_compiler_root}/../lib/ocloc" ABSOLUTE)
+    get_filename_component(OCLOC_INSTALL_DIR "/homelocal/encalle_local/Desktop/Projects/blender_test/blender/lib/linux_x64/dpcpp/lib/ocloc" ABSOLUTE)
     unset(_sycl_compiler_root)
   endif()
 

@@ -115,6 +115,8 @@ bool HIPDeviceQueue::enqueue(DeviceKernel kernel,
       break;
   }
 
+  std::cout << "Enqueueing HIP kernel " << device_kernel_as_string(kernel) << " with " << num_blocks << " blocks and " << num_threads_per_block << " threads per block and work size " << work_size << std::endl;
+
   /* Launch kernel. */
   assert_success(hipModuleLaunchKernel(hip_kernel.function,
                                        num_blocks,

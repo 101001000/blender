@@ -26,6 +26,7 @@
 #elif defined(__HIPRT__)
 #  include "kernel/device/hiprt/bvh.h"
 #elif defined(__KERNEL_SIMPLE__)
+//#  define __BVH2__
 #  include "kernel/device/simple/bvh.h"
 #else
 #  define __BVH2__

@@ -77,6 +77,7 @@ bool OneapiDeviceQueue::enqueue(DeviceKernel kernel,
                                 const int signed_kernel_work_size,
                                 const DeviceKernelArguments &_args)
 {
+
   if (oneapi_device_->have_error()) {
     return false;
   }
@@ -102,6 +103,8 @@ bool OneapiDeviceQueue::enqueue(DeviceKernel kernel,
 
   oneapi_device_->get_adjusted_global_and_local_sizes(
       kernel_context_->queue, kernel, kernel_global_size, kernel_local_size);
+
+  std::cout << "Enqueueing ONEAPI kernel " << device_kernel_as_string(kernel) << " with " << kernel_global_size << " global size and " << kernel_local_size << " local size" << signed_kernel_work_size << " work size" << std::endl;
 
   /* Call the oneAPI kernel DLL to launch the requested kernel. */
   bool is_finished_ok = oneapi_device_->enqueue_kernel(

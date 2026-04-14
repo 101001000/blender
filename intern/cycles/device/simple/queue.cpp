@@ -7,12 +7,11 @@
 
 CCL_NAMESPACE_BEGIN
 
-
 SimpleDeviceQueue::SimpleDeviceQueue(SimpleDevice *device) : DeviceQueue(device), device(device) {
 
     const int max_num_threads = device->m_backend->device_compute_units() * device->m_backend->device_max_threads_per_compute_unit();
 
-    if(device->m_backend->name() == "EMBREE_SYCL"){
+    if(device->m_backend->name() == "EMBREE_SYCL" || device->m_backend->name() == "SYCL"){ //TODO this is wrong..???
         m_concurrent_states = 16 * max(8 * max_num_threads, 65536);
         m_concurrent_busy_states = 4 * max(8 * max_num_threads, 65536);
     } else {
@@ -38,13 +37,77 @@ SimpleDeviceQueue::SimpleDeviceQueue(SimpleDevice *device) : DeviceQueue(device)
         }
     }
 
-    std::cout << "CYCLES_CONCURRENT_STATES: " << m_concurrent_states << "\n";
-    std::cout << "CYCLES_CONCURRENT_BUSY_STATES: " << m_concurrent_busy_states << "\n";
+    
+    for(int i = 0; i < DeviceKernel::DEVICE_KERNEL_NUM; i++){
+        kernel_blocksize["CPU"][i] = 64;
+        kernel_blocksize["OPTIX"][i] = 512;
+        kernel_blocksize["HIP"][i] = 1024;
+        kernel_blocksize["EMBREE_SYCL"][i] = 512;
+        kernel_blocksize["EMBREE_CPU"][i] = 64;
+        if(device->m_backend->device_name().find("CUDA") != std::string::npos || device->m_backend->device_name().find("770") != std::string::npos){
+            kernel_blocksize["SYCL"][i] = 512;
+        } else { // AMD
+            kernel_blocksize["SYCL"][i] = 512;
+        }
+    }
+
+    kernel_blocksize["OPTIX"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INIT_FROM_CAMERA] = 448;
+
+
+    if(device->m_backend->device_name().find("770") != std::string::npos){
+        std::cout << "ARC LAYOUT" << std::endl;
+        kernel_blocksize["SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_RESET] = 1024;
+
+        kernel_blocksize["SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SHADE_SURFACE] = 64;
+        kernel_blocksize["SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SHADE_SHADOW] = 64;
+        kernel_blocksize["SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SHADE_LIGHT] = 64;
+        kernel_blocksize["SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SHADE_BACKGROUND] = 64;
+
+        kernel_blocksize["SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_CLOSEST] = 128;
+        kernel_blocksize["SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_SHADOW] = 128;
+        kernel_blocksize["SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INIT_FROM_CAMERA] = 128;
+    } else if(device->m_backend->device_name().find("CUDA") != std::string::npos) {
+        
+        std::cout << "CUDA LAYOUT" << std::endl;
+    } else {
+        std::cout << "HIP LAYOUT" << std::endl;
+    }
+
+
+    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_RESET] = 1024;
+
+    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SHADE_SURFACE] = 64;
+    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SHADE_SHADOW] = 64;
+    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SHADE_LIGHT] = 64;
+    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SHADE_BACKGROUND] = 64;
+
+    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_CLOSEST] = 128;
+    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_SHADOW] = 128;
+    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INIT_FROM_CAMERA] = 128;
+
+    //std::cout << "CYCLES_CONCURRENT_STATES: " << m_concurrent_states << "\n";
+    //std::cout << "CYCLES_CONCURRENT_BUSY_STATES: " << m_concurrent_busy_states << "\n";
 }
 SimpleDeviceQueue::~SimpleDeviceQueue() {}
 
-int SimpleDeviceQueue::num_concurrent_states(const size_t state_size) const { return m_concurrent_states; }
-int SimpleDeviceQueue::num_concurrent_busy_states(const size_t state_size) const { return m_concurrent_busy_states; }
+int SimpleDeviceQueue::num_concurrent_states(const size_t state_size) const {
+    
+  static bool show = false;                  
+  if (!show) {
+    show = true;
+    std::cout << "NUM_CONCURRENT_STATES=" << m_concurrent_states << std::endl;
+  }
+    
+    return m_concurrent_states;
+}
+int SimpleDeviceQueue::num_concurrent_busy_states(const size_t state_size) const {
+    static bool show = false;                  
+    if (!show) {
+      show = true;
+      std::cout << "NUM_CONCURRENT_BUSY_STATES=" << m_concurrent_busy_states << std::endl;
+    }
+    return m_concurrent_busy_states;
+}
 void SimpleDeviceQueue::init_execution() {
     debug_init_execution();
     device->load_texture_info();
@@ -72,42 +135,7 @@ std::string type_to_string(DeviceKernelArguments::Type type) {
     }
 }
 
-// Lee los primeros 8 valores de lookup_table, y después el 21759 y el 21760.
-void read_lookup(SimpleDevice *device){
-    static std::mutex invoke_mutex;
-	//std::lock_guard<std::mutex> lock(invoke_mutex);
-    char *kg_ptr = (char*)device->m_backend->get_global_ptr("kernel_globals");
-  
-    uintptr_t d_lookup_addr = 0;
-    device->m_backend->device_copy_from(
-        &d_lookup_addr,
-        kg_ptr + offsetof(KernelParamsSimple, lookup_table),
-        sizeof(d_lookup_addr));
-  
-    printf("d_lookup_addr: %p, kg_ptr %p, kg_ptroffset %p\n", (void*)d_lookup_addr, (void*)kg_ptr, (void*)(kg_ptr + offsetof(KernelParamsSimple, lookup_table)));
-  
-    float value;
-  
-    for(int i = 0; i < 8; ++i){
-      device->m_backend->device_copy_from(&value, (void*)(d_lookup_addr + i * sizeof(float)), sizeof(value));
-      std::cout << "value " << i << ": " << value << "\n";
-    }
-  
-    device->m_backend->device_copy_from(&value, (void*)(d_lookup_addr + 21759 * sizeof(float)), sizeof(value));
-    std::cout << "value 21759: " << value << "\n";
-  
-    device->m_backend->device_copy_from(&value, (void*)(d_lookup_addr + 21760 * sizeof(float)), sizeof(value));
-    std::cout << "value 21760: " << value << "\n";
-  }
-  
-
-
 bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const DeviceKernelArguments &args) {
-
-    //std::cout << "Enqueueing kernel " << kernel << " with work size " << work_size << " and args size " << args.count << std::endl;
-
-    //read_lookup(this->device);
-    //std::lock_guard<std::mutex> lock(device->prt_mutex);
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -118,7 +146,17 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
     } else {
         device->m_backend->m_generic_kernel = true;
     }
-    //std::vector<prt::Ray> dummy_rays(work_size);
+    //TODO ELIMINAR ESTO
+    device->m_backend->m_generic_kernel = false;
+
+
+    std::size_t blocksize = kernel_blocksize[device->m_backend->name()][static_cast<int>(kernel)];
+    device->m_backend->set_ka_blocksize(blocksize); 
+
+
+    std::cout << "Enqueueing kernel " << kernel << " with work size " << work_size << " and blocksize " << blocksize << std::endl;
+
+
     std::size_t dummy_rays = work_size; // TODO: cleanup
     std::vector<unsigned char> dummy_output(0);
 
@@ -156,8 +194,7 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
         ka.tiles = get_pointer<ccl::KernelWorkTile>(args.values[0]);
         ka.num_tiles = get_scalar<int>(args.values[1]);
         ka.render_buffer = get_pointer<float>(args.values[2]);
-        ka.max_tile_work = get_scalar<int>(args.values[3]);        
-
+        ka.max_tile_work = get_scalar<int>(args.values[3]);       
         device->m_backend->parallel_invoke("simple_integrator_init_from_camera", dummy_rays, dummy_output, &ka, sizeof(ka));
         break;
     }
@@ -231,6 +268,7 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
         ka.render_buffer = get_pointer<float>(args.values[1]);
         ka.work_size = get_scalar<int>(args.values[2]);
         device->m_backend->parallel_invoke("simple_integrator_shade_surface", dummy_rays, dummy_output, &ka, sizeof(ka));
+        //std::exit(1);
         break;
     }
 

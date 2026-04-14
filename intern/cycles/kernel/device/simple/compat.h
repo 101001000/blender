@@ -249,17 +249,18 @@ ccl_device_forceinline int __float_as_int(const float x)
 
 #endif
 
-//#define ccl_gpu_kernel_signature(name, ...) prt_kernel void simple_##name(__VA_ARGS__)
-#define ccl_gpu_kernel_signature(name, ...) PRT_KERNEL(simple_##name, __VA_ARGS__)
+#define ccl_gpu_kernel_signature(name, ...) prt_kernel void simple_##name(__VA_ARGS__)
+//#define ccl_gpu_kernel_signature(name, ...) PRT_KERNEL(simple_##name, __VA_ARGS__)
 
 #define ccl_gpu_kernel_lambda(func, ...) \
-  struct KernelLambda { \
+  struct KernelLambda \
+  { \
+    KernelLambda(const prt::KernelGlobals *_kg) : kg(_kg) {} \
+    ccl_private const prt::KernelGlobals *kg; \
     __VA_ARGS__; \
-    int operator()(const int state) \
-    { \
-      return (func); \
-    } \
-  } ccl_gpu_kernel_lambda_pass
+    int operator()(const int state) const { return (func); } \
+  } ccl_gpu_kernel_lambda_pass((prt::KernelGlobals *)__prt_kg)
+
 
 
 struct CPUTexture2D {
@@ -286,13 +287,6 @@ ccl_device_inline int clampi(int x, int lo, int hi)
 {
   return (x < lo) ? lo : (x > hi ? hi : x);
 }
-
-#if defined(PRT_DUMMY_KERNEL)
-#define atomic_fetch_and_add_uint32(ptr, val) 0
-#define atomic_fetch_and_sub_uint32(ptr, val) 0
-#define atomic_add_and_fetch_float(ptr, val) 0
-#define atomic_compare_and_swap_float(ptr, oldval, newval) 0
-#endif
 
 #if defined(PRT_CPU_KERNEL) || defined(PRT_EMBREE_CPU_KERNEL)
 

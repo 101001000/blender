@@ -11,18 +11,25 @@
 
 
 set(PRT_EXTRA_KERNELS simple_integrator_init_from_camera simple_integrator_reset simple_integrator_intersect_closest simple_prefix_sum simple_integrator_sorted_paths_array simple_integrator_shade_surface simple_integrator_shade_background simple_integrator_queued_paths_array simple_integrator_compact_paths_array simple_integrator_terminated_paths_array simple_integrator_compact_states simple_adaptive_sampling_convergence_check simple_integrator_intersect_shadow simple_integrator_shade_shadow simple_integrator_queued_shadow_paths_array simple_integrator_terminated_shadow_paths_array simple_integrator_compact_shadow_paths_array simple_integrator_compact_shadow_states simple_integrator_shade_light simple_shader_eval_curve_shadow_transparency simple_shader_eval_background simple_integrator_intersect_subsurface simple_integrator_intersect_volume_stack simple_integrator_shade_volume)
-#set(KA_USE_OPTIX ON)
+set(KA_USE_OPTIX ON)
 #set(KA_SYCL_COMPILE_TARGETS spir64_gen,nvptx64-nvidia-cuda,amdgcn-amd-amdhsa)
+#set(KA_SYCL_COMPILE_TARGETS amdgcn-amd-amdhsa,nvptx64-nvidia-cuda)
 #set(KA_SYCL_COMPILE_TARGETS amdgcn-amd-amdhsa)
-set(KA_SYCL_COMPILE_TARGETS nvptx64-nvidia-cuda)
-#set(KA_SYCL_COMPILE_TARGETS spir64_gen)
-set(KA_USE_SYCL ON)
+#set(KA_SYCL_COMPILE_TARGETS nvptx64-nvidia-cuda)
+set(KA_SYCL_COMPILE_TARGETS spir64_gen)
+set(OptiX_ROOT /homelocal/encalle_local/Downloads/NVIDIA-OptiX-SDK-7.5.0-linux64-x86_64)
+#set(PRT_HIPRT_ARCH gfx1031)
+#set(KA_USE_SYCL OFF)
 set(DPCPP_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/dpc++6.1.0)
+set(embree_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/embree4.3.2-sycl)
 #set(KA_USE_EMBREE_SYCL ON)
-#set(SYCL_ROOT_DIR ${DPCPP_ROOT})
+set(SYCL_ROOT_DIR ${DPCPP_ROOT})
 #set(KA_USE_EMBREE_CPU ON)
 #set(KA_USE_ROCM ON)
 #set(ROCM_ROOT /opt/rocm)
+#set(PRT_KA_EXTRA_COMPILE_OPTIONS_SYCL
+#  "-ffp-contract=fast -fassociative-math -freciprocal-math -fno-signed-zeros -ffinite-math-only -fsycl-unnamed-lambda -fdelayed-template-parsing -mllvm -inlinedefault-threshold=250 -mllvm -inlinehint-threshold=350 --offload-compress --offload-compression-level=19 -O2 -fno-fast-math -Xsycl-target-backend=spir64_gen \"-device acm-g10 -options -cl-fast-relaxed-math -options -ze-opt-large-register-file -options -ze-opt-no-local-to-generic\""
+#)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   if(NOT DEFINED WITH_IN_SOURCE_BUILD)
@@ -767,10 +774,10 @@ This option is only for debugging purposes."
   # https://www.intel.com/content/www/us/en/develop/documentation/oneapi-dpcpp-cpp-compiler-dev-guide-and-reference/top/compilation/ahead-of-time-compilation.html
   # The supported devices can be retrieved from `ocloc` output when running
   # `ocloc compile --help`.
-  set(CYCLES_ONEAPI_INTEL_BINARIES_ARCH dg2 mtl lnl bmg CACHE STRING "\
+  set(CYCLES_ONEAPI_INTEL_BINARIES_ARCH acm-g10 CACHE STRING "\
 oneAPI Intel GPU architectures to build binaries for"
   )
-  set(CYCLES_ONEAPI_SYCL_TARGETS spir64 spir64_gen CACHE STRING "\
+  set(CYCLES_ONEAPI_SYCL_TARGETS spir64_gen CACHE STRING "\
 oneAPI targets to build AOT binaries for"
   )
 

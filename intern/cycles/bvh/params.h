@@ -112,7 +112,7 @@ class BVHParams {
 
   BVHParams()
   {
-    use_spatial_split = true;
+    use_spatial_split = false;
     spatial_split_alpha = 1e-5f;
 
     unaligned_split_threshold = 0.7f;
@@ -123,12 +123,12 @@ class BVHParams {
     sah_primitive_cost = 1.0f;
 
     min_leaf_size = 1;
-    max_triangle_leaf_size = 8;
-    max_motion_triangle_leaf_size = 8;
+    max_triangle_leaf_size = 1;
+    max_motion_triangle_leaf_size = 1;
     max_curve_leaf_size = 1;
-    max_motion_curve_leaf_size = 4;
-    max_point_leaf_size = 8;
-    max_motion_point_leaf_size = 8;
+    max_motion_curve_leaf_size = 1;
+    max_point_leaf_size = 1;
+    max_motion_point_leaf_size = 1;
 
     top_level = false;
     bvh_layout = BVH_LAYOUT_BVH2;

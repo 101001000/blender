@@ -24,6 +24,7 @@ private:
     std::size_t m_concurrent_states;
     std::size_t m_concurrent_busy_states;
     SimpleDevice *device;
+    std::map<std::string, std::map<int, std::size_t>> kernel_blocksize;
 };
 
 CCL_NAMESPACE_END

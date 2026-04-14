@@ -13,6 +13,8 @@
 #include <iostream>
 #include <thread>
 
+constexpr bool native_bvh = false; // Recuerda cambiar bvh.h
+
 
 CCL_NAMESPACE_BEGIN
 
@@ -142,7 +144,12 @@ void SimpleDevice::tex_free(device_texture &mem)
 }
 
 
-BVHLayoutMask SimpleDevice::get_bvh_layout_mask(const uint kernel_features) const {return BVH_LAYOUT_SIMPLE;}
+BVHLayoutMask SimpleDevice::get_bvh_layout_mask(const uint kernel_features) const {
+  if(native_bvh){
+    return BVH_LAYOUT_BVH2;
+  }
+  return BVH_LAYOUT_SIMPLE;
+}
 void SimpleDevice::const_copy_to(const char *name, void *host_ptr, const size_t size)
 {
   std::lock_guard<std::mutex> lock(prt_mutex); 
@@ -376,6 +383,11 @@ unique_ptr<DeviceQueue> SimpleDevice::gpu_queue_create() {
 
 void SimpleDevice::build_bvh(BVH *bvh, Progress &progress, bool refit)
 {
+  if(native_bvh){
+    Device::build_bvh(bvh, progress, refit);
+    return;
+  }
+
   if (!bvh->params.top_level) return;
 
   std::vector<std::array<float,9>> tris;

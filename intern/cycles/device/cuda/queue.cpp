@@ -47,6 +47,7 @@ int CUDADeviceQueue::num_concurrent_states(const size_t state_size) const
   VLOG_DEVICE_STATS << "GPU queue concurrent states: " << num_states << ", using up to "
                     << string_human_readable_size(num_states * state_size);
 
+  return 1048576;
   return num_states;
 }
 
@@ -59,6 +60,7 @@ int CUDADeviceQueue::num_concurrent_busy_states(const size_t /*state_size*/) con
     return 65536;
   }
 
+  return 1048576 * 4;
   return 4 * max_num_threads;
 }
 
@@ -116,6 +118,10 @@ bool CUDADeviceQueue::enqueue(DeviceKernel kernel,
       break;
   }
 
+  
+  auto start = std::chrono::high_resolution_clock::now();
+
+  std::cout << "Enqueueing CUDA kernel " << device_kernel_as_string(kernel) << " with " << num_blocks << " blocks and " << num_threads_per_block << " threads per block and work size " << work_size << std::endl;
   /* Launch kernel. */
   assert_success(cuLaunchKernel(cuda_kernel.function,
                                 num_blocks,
@@ -129,6 +135,18 @@ bool CUDADeviceQueue::enqueue(DeviceKernel kernel,
                                 const_cast<void **>(args.values),
                                 nullptr),
                  "enqueue");
+
+  synchronize();
+  //std::exit(1); 
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+  if( device->kernel_times.find(device_kernel_as_string(kernel)) == device->kernel_times.end() ) {
+      device->kernel_times[device_kernel_as_string(kernel)] = duration;
+  } else {
+      device->kernel_times[device_kernel_as_string(kernel)] += duration;
+  }
 
   debug_enqueue_end();
 

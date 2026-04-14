@@ -385,7 +385,7 @@ ccl_device_inline float smoothstep(const float edge0, const float edge1, const f
 
 #endif /* !defined(__KERNEL_METAL__) */
 
-#if defined(__KERNEL_CUDA__) && defined(PRT_CUDA_KERNEL) && defined(PRT_OPTIX_KERNEL)
+#if defined(__KERNEL_CUDA__) || defined(PRT_CUDA_KERNEL) || defined(PRT_OPTIX_KERNEL)
 ccl_device_inline float saturatef(const float a)
 {
   return __saturatef(a);
@@ -668,7 +668,7 @@ ccl_device_inline uint popcount(const uint x)
   return i;
 }
 #  endif
-#elif defined(__KERNEL_ONEAPI__) || defined(PRT_SYCL_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL) || defined(PRT_SYCL_KERNEL)
+#elif defined(__KERNEL_ONEAPI__) || defined(PRT_SYCL_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL) 
 #  define popcount(x) sycl::popcount(x)
 #elif defined(__KERNEL_HIP__)
 /* Use popcll to support 64-bit wave for pre-RDNA AMD GPUs */
