@@ -3,6 +3,7 @@
 #include "device/simple/queue.h"
 #include "device/simple/device_impl.h"
 #include "kernel/device/simple/globals.h"
+#include "util/defines.h"
 
 
 CCL_NAMESPACE_BEGIN
@@ -146,9 +147,6 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
     } else {
         device->m_backend->m_generic_kernel = true;
     }
-    //TODO ELIMINAR ESTO
-    device->m_backend->m_generic_kernel = false;
-
 
     std::size_t blocksize = kernel_blocksize[device->m_backend->name()][static_cast<int>(kernel)];
     device->m_backend->set_ka_blocksize(blocksize); 

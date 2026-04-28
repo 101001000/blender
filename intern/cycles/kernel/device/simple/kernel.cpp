@@ -151,37 +151,6 @@ struct KernelParamsSimple;
 
 #if defined(PRT_CPU_KERNEL) || defined(PRT_EMBREE_CPU_KERNEL) || defined(PRT_SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(PRT_HIP_KERNEL) || defined(PRT_OPTIX_KERNEL)  || defined(PRT_CUDA_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL)
 
-#ifdef PRT_OPTIX_KERNEL
-
-#define get_global_value(TYPE, NAME)                                                               \
-	(*reinterpret_cast<TYPE *>(                                                                    \
-	    g_params_.kernel_globals.data +                                                            \
-	    (NUM(NAME) == 0 ? 0 : g_params_.kernel_globals.byte_offsets[NUM(NAME) - 1])))
-
-// get_global_value_idx
-#define get_global_value_idx(TYPE, NAME, INDEX)                                                    \
-	(*reinterpret_cast<TYPE *>(                                                                    \
-	    g_params_.kernel_globals.data +                                                            \
-	    (NUM(NAME) == 0 ? 0 : g_params_.kernel_globals.byte_offsets[NUM(NAME) - 1]) +              \
-	    static_cast<size_t>(INDEX) * sizeof(TYPE)))
-
-// get_global_ptr
-#define get_global_ptr(TYPE, NAME)                                                                 \
-	(reinterpret_cast<TYPE *>(                                                                     \
-	    g_params_.kernel_globals.data +                                                            \
-	    (NUM(NAME) == 0 ? 0 : g_params_.kernel_globals.byte_offsets[NUM(NAME) - 1])))
-
-  #define ccl_gpu_kernel_signature(NAME, ...) struct simple_##NAME##_KernelArgs {                   \
-    DECLARE_VARS(__VA_ARGS__)                                                              \
-    __device__ void _run() const;                        \
-  };                                                                                       \
-  __device__ inline void optix_##NAME(const simple_##NAME##_KernelArgs &a) {                        \
-    a._run();                                                                              \
-  } extern "C" __global__ void __raygen__rg__simple_##NAME() {                                    \
-    optix_##NAME(*reinterpret_cast<const simple_##NAME##_KernelArgs *>(g_params_.args));            \
-  } __device__ inline void simple_##NAME##_KernelArgs::_run() const
-#endif
-
 #include "kernel/device/gpu/image.h"
 #include "kernel/device/gpu/kernel.h"
 #endif
