@@ -12,20 +12,24 @@
 
 set(PRT_EXTRA_KERNELS simple_integrator_init_from_camera simple_integrator_reset simple_integrator_intersect_closest simple_prefix_sum simple_integrator_sorted_paths_array simple_integrator_shade_surface simple_integrator_shade_background simple_integrator_queued_paths_array simple_integrator_compact_paths_array simple_integrator_terminated_paths_array simple_integrator_compact_states simple_adaptive_sampling_convergence_check simple_integrator_intersect_shadow simple_integrator_shade_shadow simple_integrator_queued_shadow_paths_array simple_integrator_terminated_shadow_paths_array simple_integrator_compact_shadow_paths_array simple_integrator_compact_shadow_states simple_integrator_shade_light simple_shader_eval_curve_shadow_transparency simple_shader_eval_background simple_integrator_intersect_subsurface simple_integrator_intersect_volume_stack simple_integrator_shade_volume)
 set(KA_USE_CPU ON)
-set(KA_USE_OPTIX ON)
-set(KA_USE_ROCM ON)
-set(KA_USE_SYCL ON)
-set(KA_USE_EMBREE_CPU ON)
+set(KA_USE_OPTIX OFF)
+set(KA_USE_ROCM OFF)
+set(KA_USE_EMBREE_CPU OFF)
 set(KA_USE_EMBREE_SYCL ON)
-set(KA_USE_SYCL ON)
+set(KA_USE_SYCL OFF)
 
 set(KA_SYCL_COMPILE_TARGETS spir64_gen,nvptx64-nvidia-cuda,amdgcn-amd-amdhsa)
 set(PRT_HIPRT_ARCH gfx1201)
 
-set(DPCPP_ROOT /home/encalle_local/Escritorio/linux-sycl-6.1.0)
+#set(DPCPP_ROOT /home/encalle_local/Escritorio/linux-sycl-6.1.0)
+#set(ROCM_ROOT /opt/rocm)
+#set(OptiX_ROOT /home/encalle_local/Escritorio/NVIDIA-OptiX-SDK-7.5.0-linux64-x86_64)
+#set(embree_ROOT /home/encalle_local/Escritorio/embree-4.3.2.sycl610.x86_64.linux)
+
+set(DPCPP_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/dpc++6.1.0)
 set(ROCM_ROOT /opt/rocm)
-set(OptiX_ROOT /home/encalle_local/Escritorio/NVIDIA-OptiX-SDK-7.5.0-linux64-x86_64)
-set(embree_ROOT /home/encalle_local/Escritorio/embree-4.3.2.sycl610.x86_64.linux)
+set(OptiX_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/NVIDIA-OptiX-SDK-7.5.0-linux64-x86_64)
+set(embree_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/embree4.3.2-sycl)
 
 
 set(SYCL_ROOT_DIR ${DPCPP_ROOT})
