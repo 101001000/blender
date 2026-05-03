@@ -108,7 +108,7 @@
   #define ccl_device_noinline static __device__ __noinline__
   #define ccl_device_noinline_cpu ccl_device
   #define ccl_global
-  #define ccl_inline_constant static __constant__
+  #define ccl_inline_constant static constexpr __constant__
   #define ccl_device_constant __constant__ __device__
   #define ccl_static_constexpr static constexpr
   #define ccl_constant const
@@ -133,7 +133,7 @@
   #define ccl_device_noinline_cpu ccl_device
   #define ccl_device_inline_method ccl_device
   #define ccl_global
-  #define ccl_inline_constant __constant__
+  #define ccl_inline_constant static constexpr __constant__
   #define ccl_device_constant __constant__ __device__
   #define ccl_static_constexpr static constexpr
   #define ccl_constant const
@@ -154,7 +154,7 @@
   #define ccl_device_noinline_cpu ccl_device
   #define ccl_device_inline_method ccl_device
   #define ccl_global
-  #define ccl_inline_constant __constant__
+  #define ccl_inline_constant inline constexpr
   #define ccl_device_constant __constant__ __device__
   #define ccl_static_constexpr static constexpr
   #define ccl_constant const
