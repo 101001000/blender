@@ -91,10 +91,10 @@ ccl_device_inline const T &kernel_data_fetch_dbg_ref(const char *nm,
   return base[i];            
 }
 
-#define kernel_data (kernel_globals.data)
+#define kernel_data (kernel_params_simple.data)
 #define kernel_data_fetch(name, index) \
-  kernel_data_fetch_dbg_ref(#name, kernel_globals.name, (index), &kernel_globals)
-#define kernel_data_array(name) (kernel_globals.name)
-#define kernel_integrator_state (kernel_globals.integrator_state)
+  kernel_data_fetch_dbg_ref(#name, kernel_params_simple.name, (index), &kernel_params_simple)
+#define kernel_data_array(name) (kernel_params_simple.name)
+#define kernel_integrator_state (kernel_params_simple.integrator_state)
 
 CCL_NAMESPACE_END

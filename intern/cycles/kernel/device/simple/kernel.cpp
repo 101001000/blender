@@ -143,7 +143,7 @@
 #if defined(PRT_CPU_KERNEL) || defined(PRT_EMBREE_CPU_KERNEL) || defined(PRT_SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(PRT_HIP_KERNEL) || defined(PRT_OPTIX_KERNEL)  || defined(PRT_CUDA_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL)
 #include "kernel/device/simple/config.h"
 #include "kernel/device/simple/globals.h"
-KernelParamsSimple kernel_globals;
+KernelParamsSimple kernel_params_simple;
 #endif
 
 #if defined(PRT_CPU_KERNEL) || defined(PRT_EMBREE_CPU_KERNEL) || defined(PRT_SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(PRT_HIP_KERNEL) || defined(PRT_OPTIX_KERNEL)  || defined(PRT_CUDA_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL)
