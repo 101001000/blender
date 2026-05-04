@@ -55,6 +55,8 @@ int HIPDeviceQueue::num_concurrent_busy_states(const size_t /*state_size*/) cons
   const int max_num_threads = hip_device_->get_num_multiprocessors() *
                               hip_device_->get_max_num_threads_per_multiprocessor();
 
+  VLOG_DEVICE_STATS << "GPU queue concurrent busy states: " << (max_num_threads == 0 ? 65536 : 4 * max_num_threads);
+
   if (max_num_threads == 0) {
     return 65536;
   }

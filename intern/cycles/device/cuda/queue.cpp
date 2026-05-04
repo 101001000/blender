@@ -47,7 +47,6 @@ int CUDADeviceQueue::num_concurrent_states(const size_t state_size) const
   VLOG_DEVICE_STATS << "GPU queue concurrent states: " << num_states << ", using up to "
                     << string_human_readable_size(num_states * state_size);
 
-  return 1048576;
   return num_states;
 }
 
@@ -56,11 +55,12 @@ int CUDADeviceQueue::num_concurrent_busy_states(const size_t /*state_size*/) con
   const int max_num_threads = cuda_device_->get_num_multiprocessors() *
                               cuda_device_->get_max_num_threads_per_multiprocessor();
 
+  VLOG_DEVICE_STATS << "GPU queue concurrent busy states: " << (max_num_threads == 0 ? 65536 : 4 * max_num_threads);
+
   if (max_num_threads == 0) {
     return 65536;
   }
 
-  return 1048576 * 4;
   return 4 * max_num_threads;
 }
 

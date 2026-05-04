@@ -10,9 +10,10 @@ CCL_NAMESPACE_BEGIN
 
 SimpleDeviceQueue::SimpleDeviceQueue(SimpleDevice *device) : DeviceQueue(device), device(device) {
 
+
     const int max_num_threads = device->m_backend->device_compute_units() * device->m_backend->device_max_threads_per_compute_unit();
 
-    if(device->m_backend->name() == "EMBREE_SYCL" || device->m_backend->name() == "SYCL"){ //TODO this is wrong..???
+    if(device->m_backend->name() == "EMBREE_SYCL" || device->m_backend->name() == "SYCL"){
         m_concurrent_states = 16 * max(8 * max_num_threads, 65536);
         m_concurrent_busy_states = 4 * max(8 * max_num_threads, 65536);
     } else {
@@ -93,20 +94,12 @@ SimpleDeviceQueue::~SimpleDeviceQueue() {}
 
 int SimpleDeviceQueue::num_concurrent_states(const size_t state_size) const {
     
-  static bool show = false;                  
-  if (!show) {
-    show = true;
-    std::cout << "NUM_CONCURRENT_STATES=" << m_concurrent_states << std::endl;
-  }
+    VLOG_DEVICE_STATS << "GPU queue concurrent states: " << m_concurrent_states << ", using up to " << string_human_readable_size(m_concurrent_states * state_size);
     
     return m_concurrent_states;
 }
 int SimpleDeviceQueue::num_concurrent_busy_states(const size_t state_size) const {
-    static bool show = false;                  
-    if (!show) {
-      show = true;
-      std::cout << "NUM_CONCURRENT_BUSY_STATES=" << m_concurrent_busy_states << std::endl;
-    }
+    VLOG_DEVICE_STATS << "GPU queue concurrent busy states: " << m_concurrent_busy_states;
     return m_concurrent_busy_states;
 }
 void SimpleDeviceQueue::init_execution() {
