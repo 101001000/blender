@@ -4,6 +4,7 @@
 #include "device/simple/device_impl.h"
 #include "kernel/device/simple/globals.h"
 #include "util/defines.h"
+#include <cstring>
 
 
 CCL_NAMESPACE_BEGIN
@@ -194,6 +195,9 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
 
     std::cout << "Enqueueing kernel " << kernel << " with work size " << work_size << " and blocksize " << blocksize << std::endl;
 
+    if(kernel == DeviceKernel::DEVICE_KERNEL_SHADER_EVAL_DISPLACE) {
+      return true;
+    }
 
     std::size_t dummy_rays = work_size; // TODO: cleanup
     std::vector<unsigned char> dummy_output(0);
@@ -203,12 +207,14 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
     const std::string kernel_name =
     std::string("simple_") + device_kernel_as_string(kernel);
 
-    device->m_backend->parallel_invoke(
+    device->m_backend->parallel_invoke_async(
         kernel_name.c_str(),
         dummy_rays,
         dummy_output,
         packed_args.data(),
         packed_args.size());
+
+    debug_enqueue_end();
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -219,10 +225,12 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
         device->kernel_times[device_kernel_as_string(kernel)] += duration;
     }
 
-    debug_enqueue_end();
     return true;
 }
-bool SimpleDeviceQueue::synchronize() { return true; }
+bool SimpleDeviceQueue::synchronize() { 
+  device->m_backend->sync();
+  return true;
+}
 void SimpleDeviceQueue::zero_to_device(device_memory &mem) {device->mem_zero(mem);}
 void SimpleDeviceQueue::copy_to_device(device_memory &mem) {
 

@@ -136,7 +136,8 @@ bool CUDADeviceQueue::enqueue(DeviceKernel kernel,
                                 nullptr),
                  "enqueue");
 
-  synchronize();
+  
+  debug_enqueue_end();
   //std::exit(1); 
 
   auto end = std::chrono::high_resolution_clock::now();
@@ -148,7 +149,6 @@ bool CUDADeviceQueue::enqueue(DeviceKernel kernel,
       device->kernel_times[device_kernel_as_string(kernel)] += duration;
   }
 
-  debug_enqueue_end();
 
   return !(cuda_device_->have_error());
 }

@@ -52,8 +52,6 @@ bool OptiXDeviceQueue::enqueue(DeviceKernel kernel,
 
   if (!is_optix_specific_kernel(kernel, use_osl)) {
     bool res = CUDADeviceQueue::enqueue(kernel, work_size, args);
-
-    synchronize();
     
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -214,8 +212,7 @@ bool OptiXDeviceQueue::enqueue(DeviceKernel kernel,
                                   1));
 
 
-  
-  synchronize();
+  debug_enqueue_end();
                                   
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -226,8 +223,6 @@ bool OptiXDeviceQueue::enqueue(DeviceKernel kernel,
         device->kernel_times[device_kernel_as_string(kernel)] += duration;
     }
 
-
-  debug_enqueue_end();
 
   return !(optix_device->have_error());
 }

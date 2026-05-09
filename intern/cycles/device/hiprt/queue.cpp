@@ -32,8 +32,7 @@ bool HIPRTDeviceQueue::enqueue(DeviceKernel kernel,
   if (!device_kernel_has_intersection(kernel)) {
 
     bool res = HIPDeviceQueue::enqueue(kernel, work_size, args);
-    synchronize();
-    
+
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
@@ -89,7 +88,7 @@ bool HIPRTDeviceQueue::enqueue(DeviceKernel kernel,
                                        nullptr),
                  "enqueue");
   
-  synchronize();
+    debug_enqueue_end();
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -99,9 +98,6 @@ bool HIPRTDeviceQueue::enqueue(DeviceKernel kernel,
     } else {
         device->kernel_times[device_kernel_as_string(kernel)] += duration;
     }
-
-
-  debug_enqueue_end();
 
   return !(hiprt_device_->have_error());
 }

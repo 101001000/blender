@@ -84,6 +84,8 @@ bool HIPDeviceQueue::enqueue(DeviceKernel kernel,
 
   debug_enqueue_begin(kernel, work_size);
 
+  auto start = std::chrono::high_resolution_clock::now();
+
   const HIPContextScope scope(hip_device_);
 
   /* Update texture info in case memory moved to host. */
@@ -134,6 +136,16 @@ bool HIPDeviceQueue::enqueue(DeviceKernel kernel,
                  "enqueue");
 
   debug_enqueue_end();
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+  if( device->kernel_times.find(device_kernel_as_string(kernel)) == device->kernel_times.end() ) {
+      device->kernel_times[device_kernel_as_string(kernel)] = duration;
+  } else {
+      device->kernel_times[device_kernel_as_string(kernel)] += duration;
+  }
+
 
   return !(hip_device_->have_error());
 }

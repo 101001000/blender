@@ -107,7 +107,7 @@ bool OneapiDeviceQueue::enqueue(DeviceKernel kernel,
                               oneapi_device_->oneapi_error_message() + "\"");
   }
 
-  synchronize();
+  debug_enqueue_end();
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -117,8 +117,6 @@ bool OneapiDeviceQueue::enqueue(DeviceKernel kernel,
   } else {
       device->kernel_times[device_kernel_as_string(kernel)] += duration;
   }
-
-  debug_enqueue_end();
 
   return is_finished_ok;
 }
