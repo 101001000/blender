@@ -143,7 +143,26 @@
 #if defined(PRT_CPU_KERNEL) || defined(PRT_EMBREE_CPU_KERNEL) || defined(PRT_SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(PRT_HIP_KERNEL) || defined(PRT_OPTIX_KERNEL)  || defined(PRT_CUDA_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL)
 #include "kernel/device/simple/config.h"
 #include "kernel/device/simple/globals.h"
-KernelParamsSimple kernel_params_simple;
+
+#define KERNEL_DATA_ARRAY(type, name) const type *g_##name = nullptr;
+KERNEL_DATA_ARRAY(int, object_ids)
+KERNEL_DATA_ARRAY(int, prim_ids)
+KERNEL_DATA_ARRAY(int, object_sizes)
+KernelData g_data;
+IntegratorStateGPU g_integrator_state;
+#include "kernel/data_arrays.h"
+#undef KERNEL_DATA_ARRAY
+
+
+namespace prt {
+
+struct __attribute__((annotate("prt_global_decl_loc"))) PrtGlobalDeclLoc {};
+
+FullHitReg closest_hit_sycl(const Ray &ray) { return __traversable->nearest_tri<ALL_TAGS>(ray); }
+
+} 
+
+
 #endif
 
 #if defined(PRT_CPU_KERNEL) || defined(PRT_EMBREE_CPU_KERNEL) || defined(PRT_SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(PRT_HIP_KERNEL) || defined(PRT_OPTIX_KERNEL)  || defined(PRT_CUDA_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL)

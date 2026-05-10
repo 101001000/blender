@@ -13,7 +13,7 @@
 #include <iostream>
 #include <thread>
 
-constexpr bool native_bvh = false; // Recuerda cambiar bvh.h
+constexpr bool native_bvh = true; // Recuerda cambiar bvh.h
 
 
 CCL_NAMESPACE_BEGIN
@@ -21,7 +21,31 @@ CCL_NAMESPACE_BEGIN
 
 SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profiler, bool headless) : GPUDevice(info, stats, profiler, headless), object_ids_mem(this, "object_ids", MEM_GLOBAL), prim_ids_mem(this, "prim_ids", MEM_GLOBAL), object_sizes_mem(this, "object_sizes", MEM_GLOBAL) {
 
-    prt::kernelapi_init({{"kernel_globals", sizeof(KernelParamsSimple)}});
+    std::vector<prt::GlobalVarInfo> global_vars;
+
+    #define KERNEL_DATA_ARRAY(type, name) global_vars.push_back(prt::global_var<const type *>(std::string("g_") + #name));
+    global_vars.push_back(prt::global_var<KernelData>("g_data"));
+    global_vars.push_back(prt::global_var<IntegratorStateGPU>("g_integrator_state"));
+    KERNEL_DATA_ARRAY(int, object_ids)
+    KERNEL_DATA_ARRAY(int, prim_ids)
+    KERNEL_DATA_ARRAY(int, object_sizes)
+    #include "kernel/data_arrays.h"
+    #undef KERNEL_DATA_ARRAY
+
+    global_vars.erase(
+    std::remove_if(
+        global_vars.begin(),
+        global_vars.end(),
+        [](const prt::GlobalVarInfo& global_var) {
+          return global_var.name == "g_curve_segments" ||
+                 global_var.name == "g_object_ids" ||
+                 global_var.name == "g_object_sizes" ||
+                 global_var.name == "g_prim_ids";
+        }),
+    global_vars.end());
+
+    prt::kernelapi_init(global_vars);
+
     int idx = -1;
     std::cout << "available backends: " << std::endl;
     for(int i = 0; i < prt::available_backends().size(); i++){
@@ -41,7 +65,7 @@ SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profi
     m_backend = prt::selected_backend;
     std::cout << "selected backend: " << prt::selected_backend->name() << std::endl;
     std::cout << "selected device: " << prt::selected_backend->device_name() << std::endl;
-    m_backend->global_alloc("kernel_globals", sizeof(KernelParamsSimple));
+
 
     unsigned int block_size = 1;
 
@@ -56,7 +80,6 @@ SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profi
 
     m_backend->set_ka_blocksize(block_size);
 
-    printf("SIZEOF host KernelParamsSimple %d\n", sizeof(KernelParamsSimple));
     printf("BLOCKSIZE %d\n", block_size);
 }
 
@@ -154,12 +177,12 @@ void SimpleDevice::const_copy_to(const char *name, void *host_ptr, const size_t 
 {
   std::lock_guard<std::mutex> lock(prt_mutex); 
     //std::cout << "const_copy_to " << name << " of size " << size << std::endl;
-    char *kg_ptr = (char *)m_backend->get_global_ptr("kernel_globals");
+    //char *kg_ptr = (char *)m_backend->get_global_ptr("kernel_globals");
 
     // Copia al slot correspondiente (tu macro actual).
     #define KERNEL_DATA_ARRAY(t, nm) \
       if (strcmp(name, #nm) == 0) { \
-        m_backend->device_copy_to(kg_ptr + offsetof(KernelParamsSimple, nm), host_ptr, size); \
+        m_backend->global_copy_to(std::string("g_") + #nm, host_ptr, size); \
         return; \
       }
     KERNEL_DATA_ARRAY(int, object_ids)

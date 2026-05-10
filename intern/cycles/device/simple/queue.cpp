@@ -229,8 +229,10 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
 }
 bool SimpleDeviceQueue::synchronize() { 
   device->m_backend->sync();
+  debug_synchronize();
   return true;
 }
+
 void SimpleDeviceQueue::zero_to_device(device_memory &mem) {device->mem_zero(mem);}
 void SimpleDeviceQueue::copy_to_device(device_memory &mem) {
 

@@ -10,6 +10,7 @@
 
 #define __KERNEL_GPU__
 #define __KERNEL_SIMPLE__
+#define __KERNEL_64_BIT__
 #define CCL_NAMESPACE_BEGIN
 #define CCL_NAMESPACE_END 
 
@@ -57,21 +58,36 @@
 #define ccl_gpu_warp_size 1
 #define ccl_gpu_block_idx_x global_idx
 
-#if defined(PRT_SYCL_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL) 
-#define ccl_gpu_syncthreads() sycl::ext::oneapi::this_work_item::get_nd_item<1>().barrier()
-#else 
-#define ccl_gpu_syncthreads void
-#endif
+
 
 #define ccl_gpu_ballot(predicate) (predicate ? 1 : 0)
-
-#define ccl_gpu_kernel_call(x) x
-
 #define ccl_gpu_thread_mask(thread_warp) \
     ((thread_warp) >= 1 ? 1 : 0)  // Máscara para 1 hilo
+#define ccl_gpu_kernel_call(x) x
 
+
+
+#if defined(PRT_SYCL_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL) 
+#  define ccl_gpu_syncthreads() sycl::ext::oneapi::this_work_item::get_nd_item<1>().barrier()
+#  define ccl_gpu_thread_idx_x (sycl::ext::oneapi::this_work_item::get_nd_item<1>().get_local_id(0))
+#  define ccl_gpu_block_dim_x (sycl::ext::oneapi::this_work_item::get_nd_item<1>().get_local_range(0))
+#  define ccl_gpu_block_idx_x (sycl::ext::oneapi::this_work_item::get_nd_item<1>().get_group(0))
+#  define ccl_gpu_grid_dim_x (sycl::ext::oneapi::this_work_item::get_nd_item<1>().get_group_range(0))
+#  define ccl_gpu_warp_size (sycl::ext::oneapi::this_work_item::get_sub_group().get_local_range()[0])
+#  define ccl_gpu_global_id_x() (sycl::ext::oneapi::this_work_item::get_nd_item<1>().get_global_id(0))
+#  define ccl_gpu_global_size_x() (sycl::ext::oneapi::this_work_item::get_nd_item<1>().get_global_range(0))
+#  define ccl_gpu_ballot(predicate) (sycl::ext::oneapi::group_ballot(sycl::ext::oneapi::this_work_item::get_sub_group(), predicate).count())
+#  define ccl_gpu_thread_mask(thread_warp) uint(0xFFFFFFFF >> (ccl_gpu_warp_size - thread_warp))
+#else 
+#define ccl_gpu_syncthreads void
 #define ccl_gpu_global_id_x() (ccl_gpu_block_idx_x * ccl_gpu_block_dim_x + \
   ccl_gpu_thread_idx_x)
+#endif
+
+
+
+
+
 #define kernel_data kernel_globals.__data
 #define kernel_integrator_state kernel_globals.integrator_state
 #define ccl_device_inline inline
@@ -92,6 +108,7 @@
 #define ccl_gpu_kernel_within_bounds(i, n) ((i) < (n))
 #define ccl_optional_struct_init
 #define ccl_device_noinline_cpu ccl_device
+
 
 
 
@@ -199,8 +216,6 @@
 #define expf(x) sycl::native::exp(((float)(x)))
 #define sqrtf(x) sycl::native::sqrt(((float)(x)))
 
-#define __forceinline __attribute__((always_inline))
-
 #define ccl_device
 #define ccl_device_extern extern "C"
 #define ccl_global
@@ -211,8 +226,8 @@
 #define ccl_device_constant static constexpr
 #define ccl_static_constexpr static constexpr
 #define ccl_device_forceinline __attribute__((always_inline))
-#define ccl_device_noinline ccl_device ccl_noinline
-#define ccl_device_noinline_cpu ccl_device
+#define ccl_device_noinline 
+#define ccl_device_noinline_cpu 
 #define ccl_device_inline_method ccl_device
 #define ccl_restrict __restrict__
 #define ccl_optional_struct_init
