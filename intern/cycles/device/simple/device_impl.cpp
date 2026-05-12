@@ -13,7 +13,7 @@
 #include <iostream>
 #include <thread>
 
-constexpr bool native_bvh = true; // Recuerda cambiar bvh.h
+constexpr bool native_bvh = false; // Recuerda cambiar bvh.h
 
 
 CCL_NAMESPACE_BEGIN
@@ -37,10 +37,22 @@ SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profi
         global_vars.begin(),
         global_vars.end(),
         [](const prt::GlobalVarInfo& global_var) {
-          return global_var.name == "g_curve_segments" ||
-                 global_var.name == "g_object_ids" ||
-                 global_var.name == "g_object_sizes" ||
-                 global_var.name == "g_prim_ids";
+          bool remove = false;
+          if(native_bvh){
+            remove |= global_var.name == "g_object_ids";
+            remove |= global_var.name == "g_prim_ids";
+            remove |= global_var.name == "g_object_sizes";
+          }else{
+            remove |= global_var.name == "g_curve_segments";
+            remove |= global_var.name == "g_bvh_leaf_nodes";
+            remove |= global_var.name == "g_bvh_nodes";
+            remove |= global_var.name == "g_object_node";
+            remove |= global_var.name == "g_prim_index";
+            remove |= global_var.name == "g_prim_time";
+            remove |= global_var.name == "g_prim_type";
+            remove |= global_var.name == "g_prim_visibility";
+          }
+          return remove;
         }),
     global_vars.end());
 

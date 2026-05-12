@@ -332,9 +332,18 @@ vector<DeviceInfo> Device::available_devices(const uint mask)
 
 void Device::print_times() const
 {
+  float sum = 0;
+  float intersect_sum = 0;
   for(auto it = kernel_times.begin(); it != kernel_times.end(); it++){
     std::cout << it->first << ": " << it->second.count() << "\n";
+    sum += it->second.count();
+    if(it->first.find("intersect") != std::string::npos){
+      intersect_sum += it->second.count();
+    }
   }
+  std::cout << "Total kernel time: " << sum << "\n";
+  std::cout << "Intersect kernel time: " << intersect_sum << "\n";
+  std::cout << "Ratio: " << intersect_sum / sum << "\n";
 }
 
 DeviceInfo Device::dummy_device(const string &error_msg)

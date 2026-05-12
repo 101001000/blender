@@ -68,7 +68,7 @@ SimpleDeviceQueue::SimpleDeviceQueue(SimpleDevice *device) : DeviceQueue(device)
 
         kernel_blocksize["SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_CLOSEST] = 128;
         kernel_blocksize["SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_SHADOW] = 128;
-        kernel_blocksize["SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INIT_FROM_CAMERA] = 128;
+        kernel_blocksize["SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_SUBSURFACE] = 128;
     } else if(device->m_backend->device_name().find("CUDA") != std::string::npos) {
         
         std::cout << "CUDA LAYOUT" << std::endl;
@@ -86,7 +86,23 @@ SimpleDeviceQueue::SimpleDeviceQueue(SimpleDevice *device) : DeviceQueue(device)
 
     kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_CLOSEST] = 128;
     kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_SHADOW] = 128;
-    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INIT_FROM_CAMERA] = 128;
+    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_SUBSURFACE] = 128;
+
+    /*
+    for(int i = 0; i < DeviceKernel::DEVICE_KERNEL_NUM; i++){
+        std::string kernel_name = device_kernel_as_string(static_cast<DeviceKernel>(i));
+        kernel_blocksize["SYCL"][i] =  512;
+
+        if(kernel_name.find("integrator_reset") != std::string::npos) {
+          kernel_blocksize["SYCL"][i] = 1024;
+        }
+        if(kernel_name.find("shade") != std::string::npos) {
+          kernel_blocksize["SYCL"][i] = 64;
+        }
+        if(kernel_name.find("intersect") != std::string::npos) {
+          kernel_blocksize["SYCL"][i] = 128;
+        }
+    }*/
 
     //std::cout << "CYCLES_CONCURRENT_STATES: " << m_concurrent_states << "\n";
     //std::cout << "CYCLES_CONCURRENT_BUSY_STATES: " << m_concurrent_busy_states << "\n";
