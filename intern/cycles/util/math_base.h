@@ -670,7 +670,7 @@ ccl_device_inline uint popcount(const uint x)
 #  endif
 #elif defined(__KERNEL_ONEAPI__) || defined(PRT_SYCL_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL) 
 #  define popcount(x) sycl::popcount(x)
-#elif defined(__KERNEL_HIP__)
+#elif defined(__KERNEL_HIP__) || defined(PRT_HIP_KERNEL)
 /* Use popcll to support 64-bit wave for pre-RDNA AMD GPUs */
 #  define popcount(x) __popcll(x)
 #elif !defined(__KERNEL_METAL__)
@@ -729,7 +729,7 @@ ccl_device_inline uint count_trailing_zeros(const uint x)
 
 ccl_device_inline uint find_first_set(const uint x)
 {
-#if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__) || defined(__KERNEL_HIP__)
+#if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__) || defined(__KERNEL_HIP__) || defined(PRT_OPTIX_KERNEL) || defined(PRT_HIP_KERNEL) || defined(PRT_CUDA_KERNEL)
   return __ffs(x);
 #elif defined(__KERNEL_METAL__)
   return (x != 0) ? ctz(x) + 1 : 0;

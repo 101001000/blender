@@ -14,13 +14,13 @@ set(PRT_EXTRA_KERNELS simple_integrator_init_from_camera simple_integrator_reset
 set(KA_USE_CPU ON)
 set(KA_USE_OPTIX OFF)
 set(KA_USE_ROCM OFF)
-set(KA_USE_EMBREE_CPU OFF)
-set(KA_USE_EMBREE_SYCL ON)
+set(KA_USE_EMBREE_CPU ON)
+set(KA_USE_EMBREE_SYCL OFF)
 set(KA_USE_SYCL OFF)
 
-set(KA_SYCL_COMPILE_TARGETS amdgcn-amd-amdhsa)
+#set(KA_SYCL_COMPILE_TARGETS spir64)
 #set(KA_SYCL_COMPILE_TARGETS spir64_gen,nvptx64-nvidia-cuda,amdgcn-amd-amdhsa)
-set(PRT_HIPRT_ARCH gfx1201)
+set(PRT_HIPRT_ARCHS gfx1031)
 
 #set(DPCPP_ROOT /home/encalle_local/Escritorio/linux-sycl-6.1.0)
 #set(ROCM_ROOT /opt/rocm)
@@ -712,7 +712,7 @@ if(NOT APPLE AND NOT (WIN32 AND CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64"))
 
   option(WITH_CYCLES_CUDA_BINARIES "Build Cycles NVIDIA CUDA binaries" OFF)
   set(CYCLES_CUDA_BINARIES_ARCH
-    sm_30 sm_35 sm_37 sm_50 sm_52 sm_60 sm_61 sm_70 sm_75 sm_86 sm_89 sm_120 compute_75
+    sm_86 sm_120 compute_75
     CACHE STRING "CUDA architectures to build binaries for"
   )
   option(WITH_CYCLES_CUDA_BUILD_SERIAL "\
@@ -782,10 +782,10 @@ This option is only for debugging purposes."
   # https://www.intel.com/content/www/us/en/develop/documentation/oneapi-dpcpp-cpp-compiler-dev-guide-and-reference/top/compilation/ahead-of-time-compilation.html
   # The supported devices can be retrieved from `ocloc` output when running
   # `ocloc compile --help`.
-  set(CYCLES_ONEAPI_INTEL_BINARIES_ARCH acm-g10 CACHE STRING "\
+  set(CYCLES_ONEAPI_INTEL_BINARIES_ARCH dg2 mtl lnl bmg CACHE STRING "\
 oneAPI Intel GPU architectures to build binaries for"
   )
-  set(CYCLES_ONEAPI_SYCL_TARGETS spir64_gen CACHE STRING "\
+  set(CYCLES_ONEAPI_SYCL_TARGETS spir64 spir64_gen CACHE STRING "\
 oneAPI targets to build AOT binaries for"
   )
 

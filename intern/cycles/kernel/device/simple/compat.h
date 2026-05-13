@@ -154,7 +154,7 @@
   #define ccl_device_noinline_cpu ccl_device
   #define ccl_device_inline_method ccl_device
   #define ccl_global
-  #define ccl_inline_constant inline constexpr
+  #define ccl_inline_constant static constexpr __constant__
   #define ccl_device_constant __constant__ __device__
   #define ccl_static_constexpr static constexpr
   #define ccl_constant const
@@ -163,6 +163,31 @@
   #define ccl_may_alias
   #define ccl_restrict __restrict__
   #define ccl_align(n) __align__(n)
+  #define ccl_gpu_shared __shared__
+
+  #define ccl_gpu_thread_idx_x (threadIdx.x)
+  #define ccl_gpu_block_dim_x (blockDim.x)
+  #define ccl_gpu_block_idx_x (blockIdx.x)
+  #define ccl_gpu_grid_dim_x (gridDim.x)
+  #define ccl_gpu_warp_size (warpSize)
+  #define ccl_gpu_thread_mask(thread_warp) uint64_t((1ull << (thread_warp)) - 1)
+
+  #define ccl_gpu_global_id_x() \
+    (ccl_gpu_block_idx_x * ccl_gpu_block_dim_x + ccl_gpu_thread_idx_x)
+
+  #define ccl_gpu_global_size_x() \
+    (ccl_gpu_grid_dim_x * ccl_gpu_block_dim_x)
+
+  #define cosf(x) __cosf(((float)(x)))
+  #define sinf(x) __sinf(((float)(x)))
+  #define powf(x, y) __powf(((float)(x)), ((float)(y)))
+  #define tanf(x) __tanf(((float)(x)))
+  #define logf(x) __logf(((float)(x)))
+  #define expf(x) __expf(((float)(x)))
+
+  #define ccl_gpu_syncthreads() __syncthreads()
+  #define ccl_gpu_ballot(predicate) __ballot(predicate)
+
   //#define ccl_gpu_syncthreads() __syncthreads()
   //#define ccl_gpu_warp_size (warpSize)
   //#define ccl_gpu_thread_mask(thread_warp) uint64_t((1ull << thread_warp) - 1)

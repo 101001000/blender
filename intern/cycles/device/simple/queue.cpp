@@ -77,6 +77,10 @@ SimpleDeviceQueue::SimpleDeviceQueue(SimpleDevice *device) : DeviceQueue(device)
     }
 
 
+    //kernel_blocksize["HIP"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_CLOSEST] = 256;
+    //kernel_blocksize["HIP"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_SHADOW] = 256;
+    //kernel_blocksize["HIP"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INIT_FROM_CAMERA] = 256;
+
     kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_RESET] = 1024;
 
     kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SHADE_SURFACE] = 64;

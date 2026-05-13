@@ -71,7 +71,7 @@ ccl_device_inline half float_to_half_image(const float f)
 {
 #if defined(__KERNEL_METAL__) || defined(__KERNEL_ONEAPI__) || defined(PRT_EMBREE_SYCL_KERNEL) || defined(PRT_SYCL_KERNEL)
   return half(min(f, 65504.0f));
-#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__)
+#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__) || defined(PRT_HIP_KERNEL)
   return __float2half(min(f, 65504.0f));
 #else
   const uint u = __float_as_uint(f);
