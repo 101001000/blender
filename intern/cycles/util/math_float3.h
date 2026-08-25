@@ -162,7 +162,7 @@ ccl_device_inline float3 operator/=(float3 &a, const float f)
 }
 
 #  if !(defined(__KERNEL_METAL__) || defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__) || \
-        defined(__KERNEL_ONEAPI__) || defined(PRT_EMBREE_SYCL_KERNEL) || defined(PRT_SYCL_KERNEL) || (defined(__KERNEL_SIMPLE__) && defined(PRT_OPTIX_KERNEL)) || (defined(__KERNEL_SIMPLE__) && defined(PRT_HIP_KERNEL)) || (defined(__KERNEL_SIMPLE__) && defined(PRT_CUDA_KERNEL)))
+        defined(__KERNEL_ONEAPI__) || defined(PRT_KERNEL_EMBREE_SYCL) || defined(PRT_KERNEL_SYCL) || (defined(__KERNEL_SIMPLE__) && defined(PRT_KERNEL_HIP)) || (defined(__KERNEL_SIMPLE__) && defined(PRT_KERNEL_CUDA)))
 ccl_device_inline packed_float3 operator*=(packed_float3 &a, const float3 b)
 {
   a = float3(a) * b;

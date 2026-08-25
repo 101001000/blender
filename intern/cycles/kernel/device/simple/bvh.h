@@ -69,9 +69,12 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
         return false;
     }
 
-    uint id = 0;
-    uint prim_id = 0;
+    //uint id = 0;
+    //uint prim_id = 0;
     int i = 0;
+
+    int prim = 0;
+    int object = 0;
 
     do{
           
@@ -82,7 +85,7 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
           self_prim_id = ray->self.prim - kernel_data_fetch(object_prim_offset, ray->self.object);
       }
   
-      prt_ray.self_id = self_object_size + self_prim_id;
+      //prt_ray.self_id = self_object_size + self_prim_id;
   
       auto hit = prt::closest_hit(prt_ray);
   
@@ -91,28 +94,36 @@ ccl_device_intersect bool scene_intersect(KernelGlobals kg,
       }
 
 
-      id = kernel_data_fetch(object_ids, hit.primitive_id);
-      prim_id = kernel_data_fetch(prim_ids, hit.primitive_id);
-      const int off = kernel_data_fetch(object_prim_offset, id);
+      //id = kernel_data_fetch(object_ids, hit.primitive_id);
+      //prim_id = kernel_data_fetch(prim_ids, hit.primitive_id);
+      //const int off = kernel_data_fetch(object_prim_offset, id);
+
+
+      object =
+        kernel_data_fetch(object_ids, hit.instance_id);
+
+      prim =
+          kernel_data_fetch(object_prim_offset, object) +
+          hit.primitive_id;
 
       isect->t = hit.t;
       isect->u = hit.u;
       isect->v = hit.v;
-      isect->prim = off + prim_id; // Warning
+      isect->prim = prim; // Warning
       isect->type = PRIMITIVE_TRIANGLE;
-      isect->object = id;
+      isect->object = object;
 
       prt_ray.tmin = hit.t + 0.001f;
-      prt_ray.self_id = self_object_size + prim_id;
+      //prt_ray.self_id = self_object_size + prim_id;
 
       if(i++ > 1000){
-        #ifdef PRT_HIP_KERNEL
+        #ifdef PRT_KERNEL_HIP
         printf("Max iterations reached\n");
         #endif
         return false;
       }
 
-    }while(!terminate_ray_visibility(ray->self, id, prim_id, visibility));
+    }while(!terminate_ray_visibility(ray->self, object, prim, visibility));
 
     return true;
     
@@ -238,7 +249,7 @@ ccl_device_intersect bool scene_intersect_local(KernelGlobals kg,
         self_object_size = kernel_data_fetch(object_sizes, ray->self.object);
         self_local_prim_id = ray->self.prim - kernel_data_fetch(object_prim_offset, ray->self.object);
     }
-    prt_ray.self_id = self_object_size + self_local_prim_id;
+    //prt_ray.self_id = self_object_size + self_local_prim_id;
 
     auto hit = prt::closest_hit(prt_ray);
 
@@ -250,15 +261,16 @@ ccl_device_intersect bool scene_intersect_local(KernelGlobals kg,
     v = hit.v;
     t = hit.t;
 
-    object_id = kernel_data_fetch(object_ids, hit.primitive_id);
-    prim_id = kernel_data_fetch(prim_ids, hit.primitive_id) + kernel_data_fetch(object_prim_offset, object_id);
+    object_id = kernel_data_fetch(object_ids, hit.instance_id);
+    prim_id = kernel_data_fetch(object_prim_offset, object_id) + hit.primitive_id;
+    //prim_id = kernel_data_fetch(prim_ids, hit.primitive_id) + kernel_data_fetch(object_prim_offset, object_id);
     
 
     prt_ray.tmin = t + 0.001f;
-    prt_ray.self_id = self_object_size + kernel_data_fetch(prim_ids, hit.primitive_id);
+    //prt_ray.self_id = self_object_size + kernel_data_fetch(prim_ids, hit.primitive_id);
 
     if(i++ > 1000){
-      #ifdef PRT_HIP_KERNEL
+      #ifdef PRT_KERNEL_HIP
       printf("Max iterations reached\n");
       #endif
       return false;
@@ -403,7 +415,7 @@ ccl_device_intersect bool scene_intersect_shadow_all(KernelGlobals kg,
   }
 
 
-  prt_ray.self_id = self_object_size + self_prim_id;
+  //prt_ray.self_id = self_object_size + self_prim_id;
 
   uint num_hits = 0;
   bool clamp_far = false;
@@ -413,10 +425,10 @@ ccl_device_intersect bool scene_intersect_shadow_all(KernelGlobals kg,
    
     auto hit = prt::closest_hit(prt_ray);   
     if (hit.valid) {
-      int self_object_id = kernel_data_fetch(object_ids, hit.primitive_id);
-      self_object_size = kernel_data_fetch(object_sizes, self_object_id);
-      self_prim_id = hit.primitive_id - kernel_data_fetch(object_prim_offset, self_object_id);
-      prt_ray.self_id = self_object_size + self_prim_id;
+      //int self_object_id = kernel_data_fetch(object_ids, hit.primitive_id);
+      //self_object_size = kernel_data_fetch(object_sizes, self_object_id);
+      //self_prim_id = hit.primitive_id - kernel_data_fetch(object_prim_offset, self_object_id);
+      //prt_ray.self_id = self_object_size + self_prim_id;
       prt_ray.tmin = hit.t + 0.001f;
     } else {
       break;
@@ -424,8 +436,8 @@ ccl_device_intersect bool scene_intersect_shadow_all(KernelGlobals kg,
 
     bool clamp_far = false;
 
-    const int object_id = kernel_data_fetch(object_ids, hit.primitive_id);
-    const int prim_id = kernel_data_fetch(prim_ids, hit.primitive_id);
+    const int object_id = kernel_data_fetch(object_ids, hit.instance_id);
+    const int prim_id = kernel_data_fetch(object_prim_offset, object_id) + hit.primitive_id;
     const int off = kernel_data_fetch(object_prim_offset, object_id);
     
     // call to the anyhit "shader"

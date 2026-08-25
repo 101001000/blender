@@ -44,6 +44,7 @@ SimpleDeviceQueue::SimpleDeviceQueue(SimpleDevice *device) : DeviceQueue(device)
     for(int i = 0; i < DeviceKernel::DEVICE_KERNEL_NUM; i++){
         kernel_blocksize["CPU"][i] = 64;
         kernel_blocksize["OPTIX"][i] = 512;
+        kernel_blocksize["CUDA"][i] = 512;
         kernel_blocksize["HIP"][i] = 1024;
         kernel_blocksize["EMBREE_SYCL"][i] = 512;
         kernel_blocksize["EMBREE_CPU"][i] = 64;
@@ -55,6 +56,7 @@ SimpleDeviceQueue::SimpleDeviceQueue(SimpleDevice *device) : DeviceQueue(device)
     }
 
     kernel_blocksize["OPTIX"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INIT_FROM_CAMERA] = 448;
+    kernel_blocksize["CUDA"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INIT_FROM_CAMERA] = 448;
 
 
     if(device->m_backend->device_name().find("770") != std::string::npos){
@@ -186,12 +188,6 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
     auto start = std::chrono::high_resolution_clock::now();
 
     debug_enqueue_begin(kernel, work_size); 
-
-    if(device_kernel_has_intersection(kernel)){
-        device->m_backend->m_generic_kernel = false;
-    } else {
-        device->m_backend->m_generic_kernel = true;
-    }
 
     std::size_t blocksize = kernel_blocksize[device->m_backend->name()][static_cast<int>(kernel)];
     device->m_backend->set_ka_blocksize(blocksize); 

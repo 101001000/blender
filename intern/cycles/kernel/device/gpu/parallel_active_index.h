@@ -88,7 +88,7 @@ __device__
 #  else
                                           IsActiveOp is_active_op)
 {
-#if defined(PRT_EMBREE_CPU_KERNEL)
+#if defined(PRT_KERNEL_EMBREE_CPU)
 
 
   

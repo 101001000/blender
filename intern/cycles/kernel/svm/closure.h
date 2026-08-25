@@ -38,7 +38,7 @@ ccl_device_inline int svm_node_closure_bsdf_skip(KernelGlobals kg, int offset, c
 }
 
 template<uint node_feature_mask, ShaderType shader_type>
-#if !defined(__KERNEL_ONEAPI__) && !defined(PRT_EMBREE_SYCL_KERNEL) && !defined(PRT_SYCL_KERNEL)
+#if !defined(__KERNEL_ONEAPI__) && !defined(PRT_KERNEL_EMBREE_SYCL) && !defined(PRT_KERNEL_SYCL)
 ccl_device_noinline
 #else
 ccl_device

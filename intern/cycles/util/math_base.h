@@ -87,7 +87,7 @@ CCL_NAMESPACE_BEGIN
 
 /* Scalar */
 
-#if !defined(__HIP__) && !defined(__KERNEL_ONEAPI__) && !defined(PRT_EMBREE_SYCL_KERNEL) && !defined(PRT_SYCL_KERNEL) // esto da igual
+#if !defined(__HIP__) && !defined(__KERNEL_ONEAPI__) && !defined(PRT_KERNEL_EMBREE_SYCL) && !defined(PRT_KERNEL_SYCL) // esto da igual
 #  ifdef _WIN32
 ccl_device_inline float fmaxf(const float a, const float b)
 {
@@ -102,8 +102,8 @@ ccl_device_inline float fminf(const float a, const float b)
 #  endif /* _WIN32 */
 #endif   /* __HIP__, __KERNEL_ONEAPI__ */
 
-#if !defined(__KERNEL_GPU__) || defined(__KERNEL_ONEAPI__) || defined(PRT_SYCL_KERNEL) || (defined(__KERNEL_SIMPLE__) && !defined(PRT_OPTIX_KERNEL) && !defined(PRT_HIP_KERNEL) && !defined(PRT_CUDA_KERNEL))
-#  if !defined(__KERNEL_ONEAPI__) && !defined(PRT_EMBREE_SYCL_KERNEL) && !defined(PRT_SYCL_KERNEL)
+#if !defined(__KERNEL_GPU__) || defined(__KERNEL_ONEAPI__) || defined(PRT_KERNEL_SYCL) || (defined(__KERNEL_SIMPLE__) && !defined(PRT_KERNEL_HIP) && !defined(PRT_KERNEL_CUDA))
+#  if !defined(__KERNEL_ONEAPI__) && !defined(PRT_KERNEL_EMBREE_SYCL) && !defined(PRT_KERNEL_SYCL)
 using std::isfinite;
 using std::isnan;
 using std::sqrt;
@@ -213,7 +213,7 @@ ccl_device_inline float max4(const float a, const float b, float c, const float 
   return max(max(a, b), max(c, d));
 }
 
-#if !defined(__KERNEL_METAL__) && !defined(__KERNEL_ONEAPI__) && !defined(PRT_EMBREE_SYCL_KERNEL) && !defined(PRT_SYCL_KERNEL)
+#if !defined(__KERNEL_METAL__) && !defined(__KERNEL_ONEAPI__) && !defined(PRT_KERNEL_EMBREE_SYCL) && !defined(PRT_KERNEL_SYCL)
 /* Int/Float conversion */
 
 ccl_device_inline int as_int(const uint i)
@@ -385,7 +385,7 @@ ccl_device_inline float smoothstep(const float edge0, const float edge1, const f
 
 #endif /* !defined(__KERNEL_METAL__) */
 
-#if defined(__KERNEL_CUDA__) || defined(PRT_CUDA_KERNEL) || defined(PRT_OPTIX_KERNEL)
+#if defined(__KERNEL_CUDA__) || defined(PRT_KERNEL_CUDA)
 ccl_device_inline float saturatef(const float a)
 {
   return __saturatef(a);
@@ -651,7 +651,7 @@ ccl_device float bits_to_01(const uint bits)
   return bits * (1.0f / (float)0xFFFFFFFF);
 }
 
-#if !defined(__KERNEL_GPU__) || (defined(__KERNEL_SIMPLE__) && !defined(PRT_SYCL_KERNEL) && !defined(PRT_OPTIX_KERNEL) && !defined(PRT_HIP_KERNEL)  && !defined(PRT_CUDA_KERNEL))
+#if !defined(__KERNEL_GPU__) || (defined(__KERNEL_SIMPLE__) && !defined(PRT_KERNEL_SYCL) && !defined(PRT_KERNEL_HIP)  && !defined(PRT_KERNEL_CUDA))
 #  if defined(__GNUC__)
 ccl_device_inline uint popcount(const uint x)
 {
@@ -668,9 +668,9 @@ ccl_device_inline uint popcount(const uint x)
   return i;
 }
 #  endif
-#elif defined(__KERNEL_ONEAPI__) || defined(PRT_SYCL_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL) 
+#elif defined(__KERNEL_ONEAPI__) || defined(PRT_KERNEL_SYCL) || defined(PRT_KERNEL_EMBREE_SYCL)
 #  define popcount(x) sycl::popcount(x)
-#elif defined(__KERNEL_HIP__) || defined(PRT_HIP_KERNEL)
+#elif defined(__KERNEL_HIP__) || defined(PRT_KERNEL_HIP)
 /* Use popcll to support 64-bit wave for pre-RDNA AMD GPUs */
 #  define popcount(x) __popcll(x)
 #elif !defined(__KERNEL_METAL__)
@@ -679,11 +679,11 @@ ccl_device_inline uint popcount(const uint x)
 
 ccl_device_inline uint count_leading_zeros(const uint x)
 {
-#if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__) || defined(__KERNEL_HIP__) || defined(PRT_OPTIX_KERNEL) || defined(PRT_HIP_KERNEL)  || defined(PRT_CUDA_KERNEL)
+#if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__) || defined(__KERNEL_HIP__) || defined(PRT_KERNEL_HIP)  || defined(PRT_KERNEL_CUDA)
   return __clz(x);
 #elif defined(__KERNEL_METAL__)
   return clz(x);
-#elif defined(__KERNEL_ONEAPI__) || defined(PRT_EMBREE_SYCL_KERNEL) || defined(PRT_SYCL_KERNEL)
+#elif defined(__KERNEL_ONEAPI__) || defined(PRT_KERNEL_EMBREE_SYCL) || defined(PRT_KERNEL_SYCL)
   return sycl::clz(x);
 #else
   uint v = x;
@@ -709,11 +709,11 @@ ccl_device_inline uint count_leading_zeros(const uint x)
 
 ccl_device_inline uint count_trailing_zeros(const uint x)
 {
-#if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__) || defined(__KERNEL_HIP__) || defined(PRT_OPTIX_KERNEL) || defined(PRT_HIP_KERNEL) || defined(PRT_CUDA_KERNEL)
+#if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__) || defined(__KERNEL_HIP__) || defined(PRT_KERNEL_HIP) || defined(PRT_KERNEL_CUDA)
   return (__ffs(x) - 1);
 #elif defined(__KERNEL_METAL__)
   return ctz(x);
-#elif defined(__KERNEL_ONEAPI__) || defined(PRT_EMBREE_SYCL_KERNEL) || defined(PRT_SYCL_KERNEL)
+#elif defined(__KERNEL_ONEAPI__) || defined(PRT_KERNEL_EMBREE_SYCL) || defined(PRT_KERNEL_SYCL)
   return sycl::ctz(x);
 #else
   assert(x != 0);
@@ -729,7 +729,7 @@ ccl_device_inline uint count_trailing_zeros(const uint x)
 
 ccl_device_inline uint find_first_set(const uint x)
 {
-#if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__) || defined(__KERNEL_HIP__) || defined(PRT_OPTIX_KERNEL) || defined(PRT_HIP_KERNEL) || defined(PRT_CUDA_KERNEL)
+#if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__) || defined(__KERNEL_HIP__) || defined(PRT_KERNEL_HIP) || defined(PRT_KERNEL_CUDA)
   return __ffs(x);
 #elif defined(__KERNEL_METAL__)
   return (x != 0) ? ctz(x) + 1 : 0;
@@ -785,7 +785,7 @@ ccl_device_inline uint prev_power_of_two(const uint x)
 ccl_device_inline uint32_t reverse_integer_bits(uint32_t x)
 {
   /* Use a native instruction if it exists. */
-#if defined(__KERNEL_CUDA__) || (defined(__KERNEL_SIMPLE__) && defined(PRT_OPTIX_KERNEL)) ||  (defined(__KERNEL_SIMPLE__) && defined(PRT_CUDA_KERNEL))
+#if defined(__KERNEL_CUDA__) || (defined(__KERNEL_SIMPLE__) && defined(PRT_KERNEL_CUDA))
   return __brev(x);
 #elif defined(__KERNEL_METAL__)
   return reverse_bits(x);

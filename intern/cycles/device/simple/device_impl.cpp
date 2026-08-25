@@ -4,6 +4,7 @@
 #include "device/simple/queue.h"
 #include "bvh/bvh2.h"
 #include <portableRT/portableRT.hpp>
+#include "util/progress.h"
 #include "scene/geometry.h"
 #include "scene/object.h"
 #include "scene/mesh.h"
@@ -54,6 +55,18 @@ SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profi
         }
     }
 
+    unsigned int layout = 0;
+
+    if (const char* env = std::getenv("PRT_LAYOUT")) {
+        char* end = nullptr;
+        unsigned long v = std::strtoul(env, &end, 10);
+
+        if (end != env && *end == '\0' && v > 0) {
+            layout = static_cast<unsigned int>(v);
+        }
+    }
+
+    m_backend->select_bvh_layout(layout);
     m_backend->set_ka_blocksize(block_size);
 
     printf("SIZEOF host KernelParamsSimple %d\n", sizeof(KernelParamsSimple));
@@ -383,71 +396,115 @@ unique_ptr<DeviceQueue> SimpleDevice::gpu_queue_create() {
 
 void SimpleDevice::build_bvh(BVH *bvh, Progress &progress, bool refit)
 {
-  if(native_bvh){
+  std::cout << "BUILDING WITH LAYOUT  " << m_backend->get_bvh_layout()->name << std::endl;
+
+  std::lock_guard<std::mutex> lock(prt_mutex_bvh);
+
+  if (native_bvh) {
     Device::build_bvh(bvh, progress, refit);
     return;
   }
 
-  if (!bvh->params.top_level) return;
+  if (!bvh->params.top_level) {
+    assert(bvh->geometry.size() == 1);
 
-  std::vector<std::array<float,9>> tris;
+    Geometry *geometry = bvh->geometry[0];
+
+    if (!geometry->is_mesh()) {
+      return;
+    }
+
+    Mesh *mesh = static_cast<Mesh *>(geometry);
+    prt::Tris tris;
+    tris.reserve(mesh->num_triangles());
+
+    for (size_t i = 0; i < mesh->num_triangles(); ++i) {
+      const Mesh::Triangle triangle = mesh->get_triangle(i);
+
+      const float3 &v0 = mesh->get_verts()[triangle.v[0]];
+      const float3 &v1 = mesh->get_verts()[triangle.v[1]];
+      const float3 &v2 = mesh->get_verts()[triangle.v[2]];
+
+      tris.push_back({
+          v0.x,
+          v0.y,
+          v0.z,
+          v1.x,
+          v1.y,
+          v1.z,
+          v2.x,
+          v2.y,
+          v2.z,
+      });
+    }
+
+    m_blases.insert_or_assign(geometry, prt::BLAS{tris});
+    return;
+  }
+
+  std::vector<prt::BLASInstance> blas_instances;
   std::vector<int> object_ids;
-  std::vector<int> object_sizes;
-  std::vector<int> prim_ids;
 
-  object_sizes.push_back(0);
+  blas_instances.reserve(bvh->objects.size());
+  object_ids.reserve(bvh->objects.size());
 
-  for (Object *obj : bvh->objects) {
-    Geometry* geometry = obj->get_geometry();
-    if (!geometry->is_mesh()){
-      std::cout << "Dropping non-mesh geometry " << geometry->name << std::endl;
-      object_sizes.push_back(object_sizes.back());
+  for (Object *object : bvh->objects) {
+    Geometry *geometry = object->get_geometry();
+
+    if (!geometry->is_mesh()) {
       continue;
     }
-    Mesh* mesh = static_cast<Mesh*>(geometry);
 
-    const Transform &M = obj->get_tfm();
-    auto tp = [&](const float3 &p){
-      if(!geometry->transform_applied){
-        return transform_point(&M, p);
-      }
-      return p;
-    };
+    Mesh *mesh = static_cast<Mesh *>(geometry);
 
-    object_sizes.push_back(mesh->num_triangles() + object_sizes.back());
-
-    for (size_t j = 0; j < mesh->num_triangles(); ++j) {
-      Mesh::Triangle tri = mesh->get_triangle(j);
-      
-      float3 v0 = tp(mesh->get_verts()[tri.v[0]]);
-      float3 v1 = tp(mesh->get_verts()[tri.v[1]]);
-      float3 v2 = tp(mesh->get_verts()[tri.v[2]]);
-
-      
-      tris.push_back({v0.x,v0.y,v0.z, v1.x,v1.y,v1.z, v2.x,v2.y,v2.z});
-      object_ids.push_back(obj->get_device_index()); 
-      prim_ids.push_back((int)j);
+    if (mesh->num_triangles() == 0) {
+      continue;
     }
+
+    const auto blas_it = m_blases.find(geometry);
+    if (blas_it == m_blases.end()) {
+      progress.set_error("Missing portableRT BLAS for mesh");
+      return;
+    }
+
+    if (!geometry->transform_applied) {
+      const Transform &tfm = object->get_tfm();
+
+      const std::array<float, 12> transform = {
+          tfm.x.x,
+          tfm.x.y,
+          tfm.x.z,
+          tfm.x.w,
+          tfm.y.x,
+          tfm.y.y,
+          tfm.y.z,
+          tfm.y.w,
+          tfm.z.x,
+          tfm.z.y,
+          tfm.z.z,
+          tfm.z.w,
+      };
+
+      blas_instances.emplace_back(blas_it->second, transform);
+    }
+    else {
+      blas_instances.emplace_back(blas_it->second);
+    }
+
+    object_ids.push_back(object->get_device_index());
   }
+
+  assert(object_ids.size() == blas_instances.size());
 
   object_ids_mem.alloc(object_ids.size());
-  prim_ids_mem.alloc(prim_ids.size());
-  object_sizes_mem.alloc(object_sizes.size());
 
-  for (size_t i = 0; i < object_ids.size(); ++i) {
-    object_ids_mem[i] = object_ids[i];
-    prim_ids_mem[i]   = prim_ids[i];
-  }
-
-  for (size_t i = 0; i < object_sizes.size(); ++i) {
-    object_sizes_mem[i] = object_sizes[i];
+  for (size_t instance_id = 0; instance_id < object_ids.size(); ++instance_id) {
+    object_ids_mem[instance_id] = object_ids[instance_id];
   }
 
   object_ids_mem.copy_to_device();
-  prim_ids_mem.copy_to_device();
-  object_sizes_mem.copy_to_device();
 
-  m_backend->set_tris(tris);
+  m_backend->set_tris(prt::TLAS{blas_instances});
 }
 
 CCL_NAMESPACE_END

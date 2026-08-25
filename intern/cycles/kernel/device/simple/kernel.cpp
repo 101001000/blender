@@ -15,11 +15,11 @@
 #pragma GCC diagnostic ignored "-Wmacro-redefined"
 #pragma GCC diagnostic ignored "-Warray-bounds"
 
-#include <portableRT/kernel.hpp>
+#include <portableRT/kernel/device_common.hpp>
 
 
 // TODO: Limpiar esto
-#if defined(PRT_CPU_KERNEL) || defined(PRT_EMBREE_CPU_KERNEL) || defined(PRT_SYCL_KERNEL) || defined(PRT_OPTIX_KERNEL) || defined(PRT_CUDA_KERNEL) || defined(PRT_HIP_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL)
+#if defined(PRT_KERNEL_CPU) || defined(PRT_KERNEL_EMBREE_CPU) || defined(PRT_KERNEL_SYCL) || defined(PRT_KERNEL_CUDA) || defined(PRT_KERNEL_HIP) || defined(PRT_KERNEL_EMBREE_SYCL)
   #include "kernel/device/simple/compat.h"
   #include "util/half.h"
   #include "util/types.h"
@@ -140,13 +140,13 @@
 #endif
 
 
-#if defined(PRT_CPU_KERNEL) || defined(PRT_EMBREE_CPU_KERNEL) || defined(PRT_SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(PRT_HIP_KERNEL) || defined(PRT_OPTIX_KERNEL)  || defined(PRT_CUDA_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL)
+#if defined(PRT_KERNEL_CPU) || defined(PRT_KERNEL_EMBREE_CPU) || defined(PRT_KERNEL_SYCL) || defined(ROCM_KERNEL) || defined(PRT_KERNEL_HIP) || defined(PRT_KERNEL_CUDA) || defined(PRT_KERNEL_EMBREE_SYCL)
 #include "kernel/device/simple/config.h"
 #include "kernel/device/simple/globals.h"
 KernelParamsSimple kernel_params_simple;
 #endif
 
-#if defined(PRT_CPU_KERNEL) || defined(PRT_EMBREE_CPU_KERNEL) || defined(PRT_SYCL_KERNEL) || defined(ROCM_KERNEL) || defined(PRT_HIP_KERNEL) || defined(PRT_OPTIX_KERNEL)  || defined(PRT_CUDA_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL)
+#if defined(PRT_KERNEL_CPU) || defined(PRT_KERNEL_EMBREE_CPU) || defined(PRT_KERNEL_SYCL) || defined(ROCM_KERNEL) || defined(PRT_KERNEL_HIP) || defined(PRT_KERNEL_CUDA) || defined(PRT_KERNEL_EMBREE_SYCL)
 
 #include "kernel/device/gpu/image.h"
 #include "kernel/device/gpu/kernel.h"

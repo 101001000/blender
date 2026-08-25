@@ -3,8 +3,12 @@
 #include <portableRT/portableRT.hpp>
 #include <chrono>
 #include <map>
+#include <unordered_map>
 
 CCL_NAMESPACE_BEGIN
+
+class Geometry;
+
 
 class SimpleDevice : public GPUDevice {
 public:
@@ -43,8 +47,10 @@ public:
     device_vector<int> prim_ids_mem;
 
     std::mutex prt_mutex;
+    std::mutex prt_mutex_bvh;
 
     prt::Backend* m_backend;    
+    std::unordered_map<const Geometry *, prt::BLAS> m_blases;
 
 };
 

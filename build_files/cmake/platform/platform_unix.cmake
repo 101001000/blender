@@ -457,6 +457,11 @@ add_bundled_libraries(materialx/lib)
 find_package_wrapper(portableRT)
 set_and_warn_library_found("portableRT" portableRT_FOUND WITH_CYCLES_DEVICE_PORTABLERT)
 add_bundled_libraries(portablert/lib)
+if(WITH_CYCLES_DEVICE_PORTABLERT AND DEFINED LIBDIR)
+  file(GLOB _portablert_runtime_data CONFIGURE_DEPENDS "${LIBDIR}/portablert/lib/*.hipfb")
+  list(APPEND PLATFORM_BUNDLED_LIBRARIES ${_portablert_runtime_data})
+  unset(_portablert_runtime_data)
+endif()
 
 # With Blender 4.4 libraries there is no more Boost. But Linux distros may have
 # older versions of libs like USD with a header dependency on Boost, so can't

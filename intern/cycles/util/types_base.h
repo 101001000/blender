@@ -85,6 +85,6 @@ ccl_device_inline void print_float(const ccl_private char *label, const float a)
 
 /* Most GPU APIs matching native vector types, so we only need to implement them for
  * CPU and oneAPI. */
-#if defined(__KERNEL_GPU__) && !defined(__KERNEL_ONEAPI__) && !(defined(__KERNEL_SIMPLE__) && (defined(PRT_CPU_KERNEL) || defined(PRT_SYCL_KERNEL) || defined(PRT_EMBREE_CPU_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL)))
+#if defined(__KERNEL_GPU__) && !defined(__KERNEL_ONEAPI__) && !(defined(__KERNEL_SIMPLE__) && (defined(PRT_KERNEL_CPU) || defined(PRT_KERNEL_SYCL) || defined(PRT_KERNEL_EMBREE_CPU) || defined(PRT_KERNEL_EMBREE_SYCL)))
 #  define __KERNEL_NATIVE_VECTOR_TYPES__
 #endif

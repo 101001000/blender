@@ -98,7 +98,7 @@ ccl_device_inline void print_int3(const ccl_private char *label, const int3 a)
 
 #if defined(__KERNEL_METAL__)
 /* Metal has native packed_int3. */
-#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_ONEAPI__) || defined(PRT_OPTIX_KERNEL) || defined(PRT_CUDA_KERNEL) || defined(PRT_EMBREE_SYCL_KERNEL) || defined(PRT_SYCL_KERNEL)
+#elif defined(__KERNEL_CUDA__) || defined(__KERNEL_ONEAPI__) || defined(PRT_KERNEL_CUDA) || defined(PRT_KERNEL_EMBREE_SYCL) || defined(PRT_KERNEL_SYCL)
 /* CUDA and oneAPI int3 are already packed. */
 typedef int3 packed_int3;
 #else
