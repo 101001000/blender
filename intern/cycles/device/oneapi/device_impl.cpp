@@ -31,6 +31,7 @@
  * support SYCL. */
 extern "C" RTCDevice rtcNewSYCLDevice(sycl::context context, const char *config);
 extern "C" bool rtcIsSYCLDeviceSupported(const sycl::device sycl_device);
+extern "C" void rtcSetDeviceSYCLDevice(RTCDevice device, const sycl::device sycl_device);
 #  endif
 
 CCL_NAMESPACE_BEGIN
@@ -134,9 +135,12 @@ OneapiDevice::OneapiDevice(const DeviceInfo &info, Stats &stats, Profiler &profi
 OneapiDevice::~OneapiDevice()
 {
 #  ifdef WITH_EMBREE_GPU
-  if (embree_device) {
-    rtcReleaseDevice(embree_device);
-  }
+  /* NOTE: rtcReleaseDevice is intentionally NOT called here. The BVHEmbree
+   * objects (owned by the scene) may be destroyed after this device, and
+   * releasing the Embree device first leaves the scenes' device pointer
+   * dangling, segfaulting in rtcReleaseScene (DeviceEnterLeave). Embree
+   * scenes do not retain the device, so the device must outlive them. The
+   * process exit reclaims the memory. */
 #  endif
 
   texture_info.free();
@@ -990,6 +994,8 @@ bool OneapiDevice::create_queue(SyclQueue *&external_queue,
         oneapi_error_string_ =
             "Hardware Raytracing is not available; please install "
             "\"intel-level-zero-gpu-raytracing\" to enable it or disable Embree on GPU.";
+      } else {
+        rtcSetDeviceSYCLDevice(*device_object_ptr, created_queue->get_device());
       }
     }
 #  else

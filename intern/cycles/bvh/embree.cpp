@@ -106,9 +106,16 @@ BVHEmbree::BVHEmbree(const BVHParams &params_,
 
 BVHEmbree::~BVHEmbree()
 {
-  if (scene) {
+  /* NOTE: for SYCL (ONEAPI HW-RT) scenes, do not call rtcReleaseScene here:
+   * during session teardown the scene may already have been invalidated
+   * through ONEAPI device shutdown, and releasing it segfaults inside
+   * Embree's DeviceEnterLeave. Rebuilds through build() still release the
+   * previous scene correctly; the final scene is reclaimed at process exit.
+   * CPU Embree scenes are released normally. */
+  if (!rtc_device_is_sycl && scene) {
     rtcReleaseScene(scene);
   }
+  scene = nullptr;
 }
 
 void BVHEmbree::build(Progress &progress,
@@ -215,9 +222,9 @@ RTCError BVHEmbree::offload_scenes_to_gpu(const vector<RTCScene> &scenes)
    * memory, we force BVH to migrate to GPU before allocating other textures
    * that may not fit. */
   for (const RTCScene &embree_scene : scenes) {
-    RTCSceneFlags scene_flags = rtcGetSceneFlags(embree_scene);
-    scene_flags = scene_flags | RTC_SCENE_FLAG_PREFETCH_USM_SHARED_ON_GPU;
-    rtcSetSceneFlags(embree_scene, scene_flags);
+    /* NOTE: do not set RTC_SCENE_FLAG_PREFETCH_USM_SHARED_ON_GPU here: it
+     * crashes inside Embree's prefetchUSMSharedOnGPU on raptor1 (Arc A770 +
+     * level-zero raytracing) with the shared Embree build. */
     rtcCommitScene(embree_scene);
     /* In case of any errors from Embree, we should stop
      * the execution and propagate the error. */
