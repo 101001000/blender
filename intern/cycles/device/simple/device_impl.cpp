@@ -14,7 +14,7 @@
 #include <iostream>
 #include <thread>
 
-constexpr bool native_bvh = false; // Recuerda cambiar bvh.h
+constexpr bool native_bvh = true; // Recuerda cambiar bvh.h
 
 
 CCL_NAMESPACE_BEGIN
