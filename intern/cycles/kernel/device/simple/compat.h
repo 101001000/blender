@@ -13,6 +13,10 @@
 #define CCL_NAMESPACE_BEGIN
 #define CCL_NAMESPACE_END 
 
+#ifdef PRT_KERNEL_SYCL
+#define __KERNEL_LOCAL_ATOMIC_SORT__
+#endif
+
 #ifndef ATTR_FALLTHROUGH
 #  define ATTR_FALLTHROUGH
 #endif

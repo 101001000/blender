@@ -163,27 +163,34 @@ BVHLayoutMask SimpleDevice::get_bvh_layout_mask(const uint kernel_features) cons
   }
   return BVH_LAYOUT_SIMPLE;
 }
+
 void SimpleDevice::const_copy_to(const char *name, void *host_ptr, const size_t size)
 {
-  std::lock_guard<std::mutex> lock(prt_mutex); 
-    //std::cout << "const_copy_to " << name << " of size " << size << std::endl;
-    char *kg_ptr = (char *)m_backend->get_global_ptr("kernel_globals");
+  std::lock_guard<std::mutex> lock(prt_mutex);
 
-    // Copia al slot correspondiente (tu macro actual).
-    #define KERNEL_DATA_ARRAY(t, nm) \
-      if (strcmp(name, #nm) == 0) { \
-        m_backend->device_copy_to(kg_ptr + offsetof(KernelParamsSimple, nm), host_ptr, size); \
-        return; \
-      }
-    KERNEL_DATA_ARRAY(int, object_ids)
-    KERNEL_DATA_ARRAY(int, prim_ids)
-    KERNEL_DATA_ARRAY(int, object_sizes)
-    KERNEL_DATA_ARRAY(KernelData, data)
-    KERNEL_DATA_ARRAY(IntegratorStateGPU, integrator_state)
-    #include "kernel/data_arrays.h"
-    #undef KERNEL_DATA_ARRAY
+  if (strcmp(name, "data") == 0) {
+    assert(size <= sizeof(KernelData));
 
+    KernelData *const data = (KernelData *)host_ptr;
+    m_max_shaders = data->max_shaders;
+    std::cout << "max_shaders const copy: " << m_max_shaders << std::endl;
+  }
 
+  char *kg_ptr = (char *)m_backend->get_global_ptr("kernel_globals");
+
+#  define KERNEL_DATA_ARRAY(t, nm) \
+    if (strcmp(name, #nm) == 0) { \
+      m_backend->device_copy_to(kg_ptr + offsetof(KernelParamsSimple, nm), host_ptr, size); \
+      return; \
+    }
+
+  KERNEL_DATA_ARRAY(int, object_ids)
+  KERNEL_DATA_ARRAY(int, prim_ids)
+  KERNEL_DATA_ARRAY(int, object_sizes)
+  KERNEL_DATA_ARRAY(KernelData, data)
+  KERNEL_DATA_ARRAY(IntegratorStateGPU, integrator_state)
+#  include "kernel/data_arrays.h"
+#  undef KERNEL_DATA_ARRAY
 }
 
 

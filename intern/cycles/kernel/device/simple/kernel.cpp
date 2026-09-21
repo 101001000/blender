@@ -144,6 +144,7 @@
 #include "kernel/device/simple/config.h"
 #include "kernel/device/simple/globals.h"
 KernelParamsSimple kernel_params_simple;
+int g_max_shaders;
 #endif
 
 #if defined(PRT_KERNEL_CPU) || defined(PRT_KERNEL_EMBREE_CPU) || defined(PRT_KERNEL_SYCL) || defined(ROCM_KERNEL) || defined(PRT_KERNEL_HIP) || defined(PRT_KERNEL_CUDA) || defined(PRT_KERNEL_EMBREE_SYCL)

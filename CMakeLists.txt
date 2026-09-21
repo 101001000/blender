@@ -17,6 +17,7 @@ set(PRT_HIPRT_ARCHS gfx1031)
 #set(OptiX_ROOT /home/encalle_local/Escritorio/NVIDIA-OptiX-SDK-7.5.0-linux64-x86_64)
 #set(embree_ROOT /home/encalle_local/Escritorio/embree-4.3.2.sycl610.x86_64.linux)
 
+set(KA_SYCL_COMPILE_TARGETS "spir64")
 set(DPCPP_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/dpc++6.1.0)
 set(ROCM_ROOT /opt/rocm)
 set(OptiX_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/NVIDIA-OptiX-SDK-7.5.0-linux64-x86_64)

@@ -483,6 +483,14 @@ ccl_gpu_kernel_threads(GPU_PARALLEL_SORT_BLOCK_SIZE)
                              ccl_global int *indices,
                              const int kernel_index,
                              sycl::local_accessor<int> &local_mem)
+#elif defined(PRT_KERNEL_SYCL)
+ccl_gpu_kernel_threads(GPU_PARALLEL_SORT_BLOCK_SIZE)
+    ccl_gpu_kernel_signature(integrator_sort_bucket_pass,
+                             const int num_states,
+                             const int partition_size,
+                             const int num_states_limit,
+                             ccl_global int *indices,
+                             const int kernel_index)
 #else
 ccl_gpu_kernel_threads(GPU_PARALLEL_SORT_BLOCK_SIZE)
     ccl_gpu_kernel_signature(integrator_sort_bucket_pass,
@@ -505,17 +513,21 @@ ccl_gpu_kernel_threads(GPU_PARALLEL_SORT_BLOCK_SIZE)
   int max_shaders = context.launch_params_metal.data.max_shaders;
 #  endif
 
-#  ifdef __KERNEL_ONEAPI__
+#  if defined(__KERNEL_ONEAPI__) || defined(PRT_KERNEL_SYCL)
   /* Metal backend doesn't have these particular ccl_gpu_* defines and current kernel code
    * uses metal_*, we need the below to be compatible with these kernels. */
+#if defined(__KERNEL_ONEAPI__)
   int max_shaders = ((ONEAPIKernelContext *)kg)->__data->max_shaders;
+#elif defined(PRT_KERNEL_SYCL)
+  int max_shaders = kernel_params_simple.data.max_shaders;
+#endif
   int metal_local_id = ccl_gpu_thread_idx_x;
   int metal_local_size = ccl_gpu_block_dim_x;
   int metal_grid_id = ccl_gpu_block_idx_x;
   /* There is no difference here between different access decorations, as we are requesting
    * a raw pointer immediately, so the simplest decoration option is used (no decoration). */
-  ccl_gpu_shared int *threadgroup_array =
-      local_mem.get_multi_ptr<sycl::access::decorated::no>().get();
+  ccl_gpu_shared int *threadgroup_array = static_cast<int *>(sycl::ext::oneapi::experimental::get_work_group_scratch_memory());
+
 #  endif
 
   gpu_parallel_sort_bucket_pass(num_states,
@@ -543,6 +555,14 @@ ccl_gpu_kernel_threads(GPU_PARALLEL_SORT_BLOCK_SIZE)
                              ccl_global int *indices,
                              const int kernel_index,
                              sycl::local_accessor<int> &local_mem)
+#elif defined(PRT_KERNEL_SYCL)
+ccl_gpu_kernel_threads(GPU_PARALLEL_SORT_BLOCK_SIZE)
+    ccl_gpu_kernel_signature(integrator_sort_write_pass,
+                             const int num_states,
+                             const int partition_size,
+                             const int num_states_limit,
+                             ccl_global int *indices,
+                             const int kernel_index)
 #else
 ccl_gpu_kernel_threads(GPU_PARALLEL_SORT_BLOCK_SIZE)
     ccl_gpu_kernel_signature(integrator_sort_write_pass,
@@ -566,17 +586,20 @@ ccl_gpu_kernel_threads(GPU_PARALLEL_SORT_BLOCK_SIZE)
   int max_shaders = context.launch_params_metal.data.max_shaders;
 #  endif
 
-#  ifdef __KERNEL_ONEAPI__
+#  if defined(__KERNEL_ONEAPI__) || defined(PRT_KERNEL_SYCL)
   /* Metal backend doesn't have these particular ccl_gpu_* defines and current kernel code
    * uses metal_*, we need the below to be compatible with these kernels. */
+#if defined(__KERNEL_ONEAPI__)
   int max_shaders = ((ONEAPIKernelContext *)kg)->__data->max_shaders;
+#elif defined(PRT_KERNEL_SYCL)
+  int max_shaders = kernel_params_simple.data.max_shaders;
+#endif
   int metal_local_id = ccl_gpu_thread_idx_x;
   int metal_local_size = ccl_gpu_block_dim_x;
   int metal_grid_id = ccl_gpu_block_idx_x;
   /* There is no difference here between different access decorations, as we are requesting
    * a raw pointer immediately, so the simplest decoration option is used (no decoration). */
-  ccl_gpu_shared int *threadgroup_array =
-      local_mem.get_multi_ptr<sycl::access::decorated::no>().get();
+  ccl_gpu_shared int *threadgroup_array = static_cast<int *>(sycl::ext::oneapi::experimental::get_work_group_scratch_memory());
 #  endif
 
   gpu_parallel_sort_write_pass(num_states,

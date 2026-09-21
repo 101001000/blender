@@ -289,7 +289,6 @@ ccl_device_inline int atomic_fetch_and_or_uint32(ccl_global int *p, const int x)
       atomic(*p);
   return atomic.fetch_or(x);
 }
-#if !defined(PRT_KERNEL_SYCL) && !defined(PRT_KERNEL_EMBREE_SYCL)
 ccl_device_inline void atomic_store_local(int *p, const int x)
 {
   sycl::atomic_ref<int,
@@ -309,7 +308,6 @@ ccl_device_inline int atomic_load_local(int *p)
       atomic(*p);
   return atomic.load();
 }
-#endif
 #  endif /* __KERNEL_ONEAPI__ */
 
 #endif /* __KERNEL_GPU__ */

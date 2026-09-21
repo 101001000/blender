@@ -7,6 +7,10 @@
 #include <cstring>
 
 
+#if USE_SYCL
+#include <sycl/sycl.hpp>
+#endif
+
 CCL_NAMESPACE_BEGIN
 
 SimpleDeviceQueue::SimpleDeviceQueue(SimpleDevice *device) : DeviceQueue(device), device(device) {
@@ -207,12 +211,26 @@ bool SimpleDeviceQueue::enqueue(DeviceKernel kernel, const int work_size, const 
     const std::string kernel_name =
     std::string("simple_") + device_kernel_as_string(kernel);
 
+    int sh_mem_size = 0;
+
+#if USE_SYCL
+    if(device->m_backend->name() == "SYCL") {
+      if(kernel == DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SORT_BUCKET_PASS || kernel == DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SORT_WRITE_PASS) {
+        sh_mem_size = device->m_max_shaders * sizeof(int);
+        std::cout << "Proper sh_mem_size: " << sh_mem_size << std::endl;
+      }
+    }
+
+#endif
+
+
     device->m_backend->parallel_invoke_async(
         kernel_name.c_str(),
         dummy_rays,
         dummy_output,
         packed_args.data(),
-        packed_args.size());
+        packed_args.size(),
+        sh_mem_size);
 
     debug_enqueue_end();
 
@@ -267,6 +285,6 @@ void SimpleDeviceQueue::copy_from_device(device_memory &mem) {
   device->m_backend->device_copy_from((char *)mem.host_pointer, (char *)mem.device_pointer, mem.memory_size());
 
 }
-bool SimpleDeviceQueue::supports_local_atomic_sort() const { return false; }
+bool SimpleDeviceQueue::supports_local_atomic_sort() const { return device->m_backend->name() == "SYCL"; }
 
 CCL_NAMESPACE_END

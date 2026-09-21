@@ -51,6 +51,7 @@ public:
 
     prt::Backend* m_backend;    
     std::unordered_map<const Geometry *, prt::BLAS> m_blases;
+    int m_max_shaders = 0;
 
 };
 
