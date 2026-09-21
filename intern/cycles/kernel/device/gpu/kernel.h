@@ -518,15 +518,18 @@ ccl_gpu_kernel_threads(GPU_PARALLEL_SORT_BLOCK_SIZE)
    * uses metal_*, we need the below to be compatible with these kernels. */
 #if defined(__KERNEL_ONEAPI__)
   int max_shaders = ((ONEAPIKernelContext *)kg)->__data->max_shaders;
+  ccl_gpu_shared int *threadgroup_array =
+      local_mem.get_multi_ptr<sycl::access::decorated::no>().get();
 #elif defined(PRT_KERNEL_SYCL)
   int max_shaders = kernel_params_simple.data.max_shaders;
+    /* There is no difference here between different access decorations, as we are requesting
+   * a raw pointer immediately, so the simplest decoration option is used (no decoration). */
+  ccl_gpu_shared int *threadgroup_array = static_cast<int *>(sycl::ext::oneapi::experimental::get_work_group_scratch_memory());
 #endif
   int metal_local_id = ccl_gpu_thread_idx_x;
   int metal_local_size = ccl_gpu_block_dim_x;
   int metal_grid_id = ccl_gpu_block_idx_x;
-  /* There is no difference here between different access decorations, as we are requesting
-   * a raw pointer immediately, so the simplest decoration option is used (no decoration). */
-  ccl_gpu_shared int *threadgroup_array = static_cast<int *>(sycl::ext::oneapi::experimental::get_work_group_scratch_memory());
+
 
 #  endif
 
@@ -591,15 +594,17 @@ ccl_gpu_kernel_threads(GPU_PARALLEL_SORT_BLOCK_SIZE)
    * uses metal_*, we need the below to be compatible with these kernels. */
 #if defined(__KERNEL_ONEAPI__)
   int max_shaders = ((ONEAPIKernelContext *)kg)->__data->max_shaders;
+  ccl_gpu_shared int *threadgroup_array =
+      local_mem.get_multi_ptr<sycl::access::decorated::no>().get();
 #elif defined(PRT_KERNEL_SYCL)
   int max_shaders = kernel_params_simple.data.max_shaders;
+  /* There is no difference here between different access decorations, as we are requesting
+   * a raw pointer immediately, so the simplest decoration option is used (no decoration). */
+  ccl_gpu_shared int *threadgroup_array = static_cast<int *>(sycl::ext::oneapi::experimental::get_work_group_scratch_memory());
 #endif
   int metal_local_id = ccl_gpu_thread_idx_x;
   int metal_local_size = ccl_gpu_block_dim_x;
   int metal_grid_id = ccl_gpu_block_idx_x;
-  /* There is no difference here between different access decorations, as we are requesting
-   * a raw pointer immediately, so the simplest decoration option is used (no decoration). */
-  ccl_gpu_shared int *threadgroup_array = static_cast<int *>(sycl::ext::oneapi::experimental::get_work_group_scratch_memory());
 #  endif
 
   gpu_parallel_sort_write_pass(num_states,
