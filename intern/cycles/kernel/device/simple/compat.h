@@ -67,6 +67,28 @@
 #define ccl_gpu_syncthreads void
 #endif
 
+/* The portableRT SYCL backend launches every kernel as a real nd_range
+ * (global size rounded up to a multiple of the requested block size, one
+ * iteration of the kernel body per work-item). Therefore the work-group
+ * geometry macros must report the real hardware work-group coordinates.
+ * Flat kernels are unaffected: ccl_gpu_global_id_x() below becomes
+ * group_id * local_size + local_id, which is exactly the flat global id
+ * that the old (dummy) definition returned. Work-group collective
+ * algorithms like the __KERNEL_LOCAL_ATOMIC_SORT__ bucket/write passes
+ * (device/gpu/parallel_sorted_index.h) need the real local id/size and
+ * group id to be correct. */
+#if defined(PRT_KERNEL_SYCL)
+#undef ccl_gpu_thread_idx_x
+#undef ccl_gpu_block_dim_x
+#undef ccl_gpu_block_idx_x
+#define ccl_gpu_thread_idx_x \
+  ((int)(sycl::ext::oneapi::this_work_item::get_nd_item<1>().get_local_id(0)))
+#define ccl_gpu_block_dim_x \
+  ((int)(sycl::ext::oneapi::this_work_item::get_nd_item<1>().get_local_range(0)))
+#define ccl_gpu_block_idx_x \
+  ((int)(sycl::ext::oneapi::this_work_item::get_nd_item<1>().get_group(0)))
+#endif
+
 #define ccl_gpu_ballot(predicate) (predicate ? 1 : 0)
 
 #define ccl_gpu_kernel_call(x) x

@@ -21,9 +21,14 @@
 
 #else /* __KERNEL_GPU__ */
 
-#  if  !defined(__KERNEL_ONEAPI__)
+#  if !defined(__KERNEL_ONEAPI__) && !defined(PRT_KERNEL_SYCL) && \
+      !defined(PRT_KERNEL_EMBREE_SYCL)
 #    define atomic_fetch_and_add_uint32_shared atomic_fetch_and_add_uint32
 #  endif
+/* NOTE: for the oneAPI and portableRT SYCL backends there is no alias here
+ * (which would point to a global address-space atomic!), the shared (local
+ * memory) variant is a real function defined below, operating on local
+ * address space. Required for the __KERNEL_LOCAL_ATOMIC_SORT__ passes. */
 
 #  if defined(__KERNEL_CUDA__) || defined(__KERNEL_HIP__) || (defined(__KERNEL_SIMPLE__) && defined(PRT_KERNEL_HIP)) || defined(PRT_KERNEL_CUDA)
 
@@ -217,7 +222,10 @@ ccl_device_inline int atomic_fetch_and_add_uint32(ccl_global int *p, const int x
       atomic(*p);
   return atomic.fetch_add(x);
 }
-#if !defined(PRT_KERNEL_SYCL) && !defined(PRT_KERNEL_EMBREE_SYCL)
+/* Real local (work-group scratch) memory atomic for the oneAPI and portableRT
+ * SYCL backends. The local atomic sorting passes operate on pointers returned
+ * by get_work_group_scratch_memory(), which must never be atomically updated
+ * with a global address-space atomic_ref. */
 ccl_device_inline int atomic_fetch_and_add_uint32_shared(int *p, const int x)
 {
   sycl::atomic_ref<int,
@@ -227,7 +235,6 @@ ccl_device_inline int atomic_fetch_and_add_uint32_shared(int *p, const int x)
       atomic(*p);
   return atomic.fetch_add(x);
 }
-#endif
 ccl_device_inline unsigned int atomic_fetch_and_sub_uint32(ccl_global unsigned int *p,
                                                            unsigned int x)
 {

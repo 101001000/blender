@@ -98,6 +98,16 @@ SimpleDeviceQueue::SimpleDeviceQueue(SimpleDevice *device) : DeviceQueue(device)
     kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_SHADOW] = 128;
     kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INIT_FROM_CAMERA] = 128;
 
+    if(device->m_backend->name() == "SYCL") {
+      /* The local atomic sorting kernels are work-group collectives: each work-group
+       * processes one sort partition using GPU_PARALLEL_SORT_BLOCK_SIZE (=1024) lanes
+       * and work-group scratch memory. The integrator enqueues them with
+       * work_size = 1024 * num_sort_partitions, so the work-group size must be 1024
+       * to get exactly num_sort_partitions work-groups (one per partition). */
+      kernel_blocksize["SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SORT_BUCKET_PASS] = 1024;
+      kernel_blocksize["SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SORT_WRITE_PASS] = 1024;
+    }
+
     //std::cout << "CYCLES_CONCURRENT_STATES: " << m_concurrent_states << "\n";
     //std::cout << "CYCLES_CONCURRENT_BUSY_STATES: " << m_concurrent_busy_states << "\n";
 }
