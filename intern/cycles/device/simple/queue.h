@@ -12,6 +12,7 @@ public:
 
     int num_concurrent_states(const size_t state_size) const override;
     int num_concurrent_busy_states(const size_t state_size) const override;
+    int num_sort_partition_elements() const override;
     void init_execution() override;
     bool enqueue(DeviceKernel kernel, const int work_size, const DeviceKernelArguments &args) override;
     bool synchronize() override;
