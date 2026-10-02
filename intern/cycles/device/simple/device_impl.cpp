@@ -14,7 +14,7 @@
 #include <iostream>
 #include <thread>
 
-constexpr bool native_bvh = true; // Recuerda cambiar bvh.h
+constexpr bool native_bvh = false; // Recuerda cambiar bvh.h
 
 
 CCL_NAMESPACE_BEGIN
@@ -42,7 +42,7 @@ SimpleDevice::SimpleDevice(const DeviceInfo &info, Stats &stats, Profiler &profi
     m_backend = prt::selected_backend;
     std::cout << "selected backend: " << prt::selected_backend->name() << std::endl;
     std::cout << "selected device: " << prt::selected_backend->device_name() << std::endl;
-    m_backend->global_alloc("kernel_globals", sizeof(KernelParamsSimple));
+    //m_backend->global_alloc("kernel_globals", sizeof(KernelParamsSimple));
 
     unsigned int block_size = 1;
 

@@ -6,15 +6,11 @@
 #include "util/defines.h"
 #include <cstring>
 
-
-#if USE_SYCL
-#include <sycl/sycl.hpp>
-#endif
-
 CCL_NAMESPACE_BEGIN
 
 SimpleDeviceQueue::SimpleDeviceQueue(SimpleDevice *device) : DeviceQueue(device), device(device) {
 
+    std::cout << "supports_local_atomic_sort: " << supports_local_atomic_sort() << std::endl;
 
     const int max_num_threads = device->m_backend->device_compute_units() * device->m_backend->device_max_threads_per_compute_unit();
 
@@ -81,22 +77,6 @@ SimpleDeviceQueue::SimpleDeviceQueue(SimpleDevice *device) : DeviceQueue(device)
     } else {
         std::cout << "HIP LAYOUT" << std::endl;
     }
-
-
-    //kernel_blocksize["HIP"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_CLOSEST] = 256;
-    //kernel_blocksize["HIP"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_SHADOW] = 256;
-    //kernel_blocksize["HIP"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INIT_FROM_CAMERA] = 256;
-
-    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_RESET] = 1024;
-
-    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SHADE_SURFACE] = 64;
-    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SHADE_SHADOW] = 64;
-    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SHADE_LIGHT] = 64;
-    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SHADE_BACKGROUND] = 64;
-
-    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_CLOSEST] = 128;
-    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INTERSECT_SHADOW] = 128;
-    kernel_blocksize["EMBREE_SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_INIT_FROM_CAMERA] = 128;
 
     if(device->m_backend->name() == "SYCL") {
       kernel_blocksize["SYCL"][DeviceKernel::DEVICE_KERNEL_INTEGRATOR_SORT_BUCKET_PASS] = 1024;
@@ -298,6 +278,8 @@ void SimpleDeviceQueue::copy_from_device(device_memory &mem) {
   device->m_backend->device_copy_from((char *)mem.host_pointer, (char *)mem.device_pointer, mem.memory_size());
 
 }
-bool SimpleDeviceQueue::supports_local_atomic_sort() const { return device->m_backend->name() == "SYCL"; }
+bool SimpleDeviceQueue::supports_local_atomic_sort() const { 
+  return device->m_backend->device_name() == "Intel(R) Arc(TM) A770 Graphics (Intel(R) oneAPI Unified Runtime over Level-Zero)";
+}
 
 CCL_NAMESPACE_END

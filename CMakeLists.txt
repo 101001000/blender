@@ -12,17 +12,6 @@
 
 set(PRT_HIPRT_ARCHS gfx1031)
 
-#set(DPCPP_ROOT /home/encalle_local/Escritorio/linux-sycl-6.1.0)
-#set(ROCM_ROOT /opt/rocm)
-#set(OptiX_ROOT /home/encalle_local/Escritorio/NVIDIA-OptiX-SDK-7.5.0-linux64-x86_64)
-#set(embree_ROOT /home/encalle_local/Escritorio/embree-4.3.2.sycl610.x86_64.linux)
-
-set(KA_SYCL_COMPILE_TARGETS "spir64")
-set(DPCPP_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/dpc++6.1.0)
-set(ROCM_ROOT /opt/rocm)
-set(OptiX_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/NVIDIA-OptiX-SDK-7.5.0-linux64-x86_64)
-set(embree_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/embree4.3.2-sycl)
-set(HIPRT_ROOT /homelocal/encalle_local/Desktop/CleanBuilds/hiprt/)
 
 set(SYCL_ROOT_DIR ${DPCPP_ROOT})
 
@@ -755,7 +744,7 @@ endif()
 
 # oneAPI
 if(NOT APPLE AND NOT (WIN32 AND CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64"))
-  option(WITH_CYCLES_DEVICE_ONEAPI "Enable Cycles oneAPI compute support" ON)
+  option(WITH_CYCLES_DEVICE_ONEAPI "Enable Cycles oneAPI compute support" OFF) #TODO DISABLED AS ITS NOT COMPATIBLE WITH PORTABLERT IN NVIDIA MACHINES.
   option(WITH_CYCLES_ONEAPI_BINARIES "\
 Enable Ahead-Of-Time compilation for Cycles oneAPI device"
     OFF
